@@ -22,6 +22,7 @@ public abstract class McmcApplet extends PApplet{
 		this.size(1024, 768);
 	}
 	
+	@Override
 	public void draw() {
 		if (this.isPaused) {
 			this.background(pausedColour[0], pausedColour[1], pausedColour[2]);

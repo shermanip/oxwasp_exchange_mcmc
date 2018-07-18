@@ -21,6 +21,7 @@ public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
 	//size of the leap frog step
 	protected double sizeLeapFrog;
 	protected int nLeapFrog; //number of leap frog step for each mcmc step
+	protected int maxNLeapFrog = 100; //maximum number of leap frog steps
 	//array of vectors containing position vector of each leapfrog step
 	protected SimpleMatrix [] leapFrogPositions;
 	
@@ -40,7 +41,8 @@ public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
 		this.inverseMass = new SimpleMatrix(massVector);
 		this.sizeLeapFrog = sizeLeapFrog;
 		this.nLeapFrog = nLeapFrog;
-		this.leapFrogPositions = new SimpleMatrix [nLeapFrog];
+		//fill leapFrogPositions with null
+		this.leapFrogPositions = new SimpleMatrix [this.maxNLeapFrog];
 		//assign the functions of the elements of the mass matrix
 		CommonOps_DDRM.elementPower(massVector.getDDRM(), 0.5, this.momentumScale.getDDRM());
 		CommonOps_DDRM.divide(1, this.inverseMass.getDDRM());
@@ -140,13 +142,16 @@ public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
 	 */
 	protected void leapFrog(SimpleMatrix positionProposal, SimpleMatrix momentumProposal) {
 		this.momentumStep(positionProposal, momentumProposal, true);
+		//do leap frog steps
 		for (int i=0; i<(this.nLeapFrog-1); i++) {
 			this.positionStep(positionProposal, momentumProposal);
 			this.momentumStep(positionProposal, momentumProposal, false);
+			//save the leap frog position
 			this.leapFrogPositions[i] = new SimpleMatrix(positionProposal);
 		}
 		this.positionStep(positionProposal, momentumProposal);
 		this.momentumStep(positionProposal, momentumProposal, true);
+		//save the leap frog position
 		this.leapFrogPositions[this.nLeapFrog-1] = new SimpleMatrix(positionProposal);
 	}
 	
@@ -204,7 +209,30 @@ public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
 	 * @return double [] representing a position vector
 	 */
 	public double [] getLeapFrogPositions(int index) {
-		return this.leapFrogPositions[index].getDDRM().getData();
+		SimpleMatrix leapFrogPosition = this.leapFrogPositions[index];
+		if (leapFrogPosition == null) {
+			return this.getLeapFrogPositions(index-1);
+		} else {
+			return leapFrogPosition.getDDRM().getData();
+		}
+	}
+	
+	/**METHOD: CHANGE NUMBER OF LEAP FROG STEPS
+	 * Change the number of leap frog steps to do
+	 * @param nLeapFrog Number of leap frog steps to do in a HMC step
+	 */
+	public void setNLeapFrog(int nLeapFrog) {
+		//if there are MCMC steps to do...
+		if (this.nStep+1 < this.chainLength) {
+			this.nLeapFrog = nLeapFrog;
+		}
+	}
+	
+	/**METHOD: GET MAX N LEAP FROG
+	 * @return maximum number of leap frog steps possible
+	 */
+	public int getMaxNLeapFrog() {
+		return this.maxNLeapFrog;
 	}
 	
 }

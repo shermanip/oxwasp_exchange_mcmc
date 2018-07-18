@@ -33,6 +33,8 @@ public class HamiltonianMonteCarlo extends McmcApplet{
 	
 	@Override
 	protected void drawMcmc() {
+		
+		
 		this.stroke(0,255,0);
 		this.fill(0,255,0);
 		float x1, x2, y1, y2;
@@ -72,7 +74,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
 	
 	@Override
 	protected void changeProperty() {
-		//this.chain.setProposalCovariance(this.getProposalCovariance());
+		this.chain.setNLeapFrog(this.nLeapFrog);
 	}
 	
 	@Override
@@ -93,8 +95,21 @@ public class HamiltonianMonteCarlo extends McmcApplet{
 	
 	@Override
 	protected void checkChangeProperty() {
-		if (this.keyCode == PApplet.UP) {
-		} else if (this.keyCode == PApplet.DOWN) {
+		if (this.isInit) {
+			if (this.keyCode == PApplet.UP) {
+				if (this.nLeapFrog != this.chain.getMaxNLeapFrog()) {
+					this.nLeapFrog++;
+					this.changeProperty();
+				}
+			} else if (this.keyCode == PApplet.DOWN) {
+				if (this.nLeapFrog != 1) {
+					this.nLeapFrog--;
+					this.changeProperty();
+				}
+			} else if (this.key == 'm') {
+				this.nLeapFrog = this.chain.getMaxNLeapFrog();
+				this.changeProperty();
+			}
 		}
 	}
 
