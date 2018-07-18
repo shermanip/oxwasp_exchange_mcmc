@@ -9,8 +9,12 @@ import uk.ac.warwick.sip.mcmcccfe.BrownianParticle;
 public class BrownianMotion extends McmcApplet{
 	
 	protected BrownianParticle particle;
-	protected double diftMagnitude = 2.0;
+	protected final double diftMagnitude = 10.0;
 	
+	@Override
+	public void setup() {
+		this.proposalVariance = 1000.0;
+	}
 	
 	@Override
 	protected void drawMcmc() {
@@ -20,11 +24,11 @@ public class BrownianMotion extends McmcApplet{
 		double [] chainArray = this.particle.getChain();
 		x1 = (float) chainArray[0];
 		y1 = (float) chainArray[1];
-		this.ellipse(x1, y1 , 5, 5);
+		this.ellipse(x1, y1 , CIRCLE_SIZE, CIRCLE_SIZE);
 		for (int i=1; i<=this.particle.getNStep(); i++) {
 			x2 = (float) chainArray[i*2];
 			y2 = (float) chainArray[i*2+1];
-			this.ellipse(x2, y2 , 5, 5);
+			this.ellipse(x2, y2 , CIRCLE_SIZE, CIRCLE_SIZE);
 			this.line(x1, y1, x2, y2);
 			x1 = x2;
 			y1 = y2;
