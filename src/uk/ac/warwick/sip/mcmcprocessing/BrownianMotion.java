@@ -46,7 +46,7 @@ public class BrownianMotion extends McmcApplet{
 	}
 	
 	@Override
-	protected void setProposal() {
+	protected void changeProperty() {
 		this.particle.setProposalCovariance(this.getProposalCovariance());
 	}
 	

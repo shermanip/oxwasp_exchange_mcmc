@@ -60,7 +60,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
 	}
 	
 	@Override
-	protected void setProposal() {
+	protected void changeProperty() {
 		this.chain.setProposalCovariance(this.getProposalCovariance());
 	}
 	

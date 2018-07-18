@@ -52,7 +52,7 @@ public abstract class McmcApplet extends PApplet{
 	
 	protected abstract void drawMcmc();
 	protected abstract void takeStep();
-	protected abstract void setProposal();
+	protected abstract void changeProperty();
 	
 	public void keyReleased() {
 		if (this.key == 'p') {
@@ -65,20 +65,20 @@ public abstract class McmcApplet extends PApplet{
 		} else if (this.key == ' ') {
 			this.isToTakeStep = true;
 		} else {
-			this.checkChangeProposal();
+			this.checkChangeProperty();
 		}
 	}
 	
-	protected void checkChangeProposal() {
+	protected void checkChangeProperty() {
 		if (this.keyCode == PApplet.UP) {
 			this.proposalVariance *= 10;
 			if (this.isInit) {
-				this.setProposal();
+				this.changeProperty();
 			}
 		} else if (this.keyCode == PApplet.DOWN) {
 			this.proposalVariance /= 10;
 			if (this.isInit) {
-				this.setProposal();
+				this.changeProperty();
 			}
 		}
 	}

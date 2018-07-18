@@ -71,7 +71,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
 	}
 	
 	@Override
-	protected void setProposal() {
+	protected void changeProperty() {
 		//this.chain.setProposalCovariance(this.getProposalCovariance());
 	}
 	
@@ -92,7 +92,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
 	}
 	
 	@Override
-	protected void checkChangeProposal() {
+	protected void checkChangeProperty() {
 		if (this.keyCode == PApplet.UP) {
 		} else if (this.keyCode == PApplet.DOWN) {
 		}
