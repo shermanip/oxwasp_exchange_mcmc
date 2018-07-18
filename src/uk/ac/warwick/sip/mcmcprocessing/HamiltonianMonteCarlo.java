@@ -91,6 +91,12 @@ public class HamiltonianMonteCarlo extends McmcApplet{
 		}
 	}
 	
+	@Override
+	protected void checkChangeProposal() {
+		if (this.keyCode == PApplet.UP) {
+		} else if (this.keyCode == PApplet.DOWN) {
+		}
+	}
 
 	public static void main(String[] args) {
 		PApplet.main("uk.ac.warwick.sip.mcmcprocessing.HamiltonianMonteCarlo");

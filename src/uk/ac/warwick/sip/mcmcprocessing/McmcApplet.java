@@ -62,7 +62,15 @@ public abstract class McmcApplet extends PApplet{
 			} else {
 				this.isToTakeStep = false;
 			}
-		} else if (this.keyCode == PApplet.UP) {
+		} else if (this.key == ' ') {
+			this.isToTakeStep = true;
+		} else {
+			this.checkChangeProposal();
+		}
+	}
+	
+	protected void checkChangeProposal() {
+		if (this.keyCode == PApplet.UP) {
 			this.proposalVariance *= 10;
 			if (this.isInit) {
 				this.setProposal();
@@ -72,8 +80,6 @@ public abstract class McmcApplet extends PApplet{
 			if (this.isInit) {
 				this.setProposal();
 			}
-		} else if (this.key == ' ') {
-			this.isToTakeStep = true;
 		}
 	}
 
