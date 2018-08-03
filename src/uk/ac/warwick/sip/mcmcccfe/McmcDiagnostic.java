@@ -8,6 +8,9 @@ public class McmcDiagnostic {
   
   //array of MCMC, mcmc chains are represented as a double [], each entry for each step
   protected ArrayList <double[]> chainArray = new ArrayList<double[]>();
+  protected double chainMean; //mean of the chain
+  protected double chainMonteCarloError; //monte carlo error of the mean of the chain
+  protected double chainStd; //variance of the chain
   
   /**CONSTRUCTOR
    * Empty constructor
@@ -122,6 +125,74 @@ public class McmcDiagnostic {
     OneWayAnova anova = new OneWayAnova();
     return anova.anovaFValue(chainArrayList);
     
+  }
+  
+  /**METHOD: CALCULATE EXPECTATION
+   * Calculate the mean of the chain, it is then save in the member variable chainMean
+   */
+  public void calculateExpectation() {
+    double [] chain = this.chainArray.get(0);
+    int chainLength = chain.length;
+    SimpleMatrix chainVector = new SimpleMatrix(chainLength, 1, true, chain);
+    this.chainMean = chainVector.elementSum() / chainLength;
+  }
+  
+  /**METHOD: CALCULATE MONTE CARLO ERROR
+   * Calculate the Monte Carlo error in calculate the mean, this is done using batching
+   * It is saved in the member variable chainMonteCarloError
+   */
+  public void calculateMonteCarloError() {
+    
+    double [] chain = this.chainArray.get(0);
+    int n = this.chainArray.get(0).length;
+    
+    //calculate the number of batches
+    int nBatch = (int) Math.round(Math.sqrt((double) n));
+    
+    //declare matrices to store the following
+    SimpleMatrix batchLength = new SimpleMatrix(nBatch,1); //the length of each batch
+    SimpleMatrix batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
+    SimpleMatrix chainVector = new SimpleMatrix(n,1,true,chain); //the values in the chain
+    
+    //declare variables for pointing to specific parts of the chain in order to obtain the batch
+    //samples
+    int indexStart = 0;
+    int indexEnd;
+    //get double versions of nBatch and n
+    double nBatchDouble = (double) nBatch;
+    double chainLengthDouble = (double) n;
+    
+    //for each batch
+    for (int iBatch=0; iBatch<nBatch; iBatch++) {
+      //get the pointer of the end of the batch + 1
+      indexEnd = (int) Math.round(((double)(iBatch+1)) * chainLengthDouble / nBatchDouble);
+      //save the length of this match
+      batchLength.set(iBatch, (double) (indexEnd - indexStart));
+      //get the samples from this batch
+      SimpleMatrix batchVector = chainVector.extractMatrix(indexStart, indexEnd, 0, 1);
+      //work out the sample mean and save it
+      batchArray.set(iBatch, batchVector.elementSum()/ batchLength.get(iBatch) );
+      //set the pointer for the next batch
+      indexStart = indexEnd;
+    }
+    
+    //calculate the monte carlo error and save it
+    this.chainMonteCarloError = batchArray.minus(this.chainMean).elementPower(2)
+        .elementMult(batchLength).elementSum();
+    this.chainMonteCarloError /= ((double)(nBatch * n));
+    this.chainMonteCarloError = Math.sqrt(this.chainMonteCarloError);
+    
+  }
+  
+  /**METHOD: CALCULATE STANDARD DEVIATION
+   * Calculate the standard deviation of this chain, save it to the member variable chainStd
+   */
+  public void calculateStd() {
+    double [] chain = this.chainArray.get(0);
+    int n = this.chainArray.get(0).length;
+    SimpleMatrix residualSquared = new SimpleMatrix(n, 1, true, chain);
+    residualSquared = residualSquared.minus(this.chainMean).elementPower(2);
+    this.chainStd = Math.sqrt(residualSquared.elementSum()/((double)(n-1)));
   }
   
 }
