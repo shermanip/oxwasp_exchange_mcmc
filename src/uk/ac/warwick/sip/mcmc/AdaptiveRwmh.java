@@ -17,7 +17,6 @@ public class AdaptiveRwmh extends HomogeneousRwmh{
   
   
   /**CONSTRUCTOR
-   * 
    * @param target See superclass RandomWalkMetropolisHastings
    * @param chainLength See superclass RandomWalkMetropolisHastings
    * @param proposalCovariance proposal_covariance
@@ -29,6 +28,20 @@ public class AdaptiveRwmh extends HomogeneousRwmh{
     super(target, chainLength, proposalCovariance, rng);
     this.nStepTillAdaptive = 2*this.getNDim()-1; //default value
     this.e = 1E-10; //default value
+  }
+  
+  /**CONSTRUCTOR
+   * Constructor for extending the length of the chain and resume running it
+   * Does a shallow copy of the provided chain and extending the member variable chainArray
+   * @param chain Chain to be extended
+   * @param nMoreSteps Number of steps to be extended
+   */
+  public AdaptiveRwmh(AdaptiveRwmh chain, int nMoreSteps) {
+    //call superconstructor to do a shallow copy and extend the chain
+    super(chain, nMoreSteps);
+    //shallow copy member variables
+    this.nStepTillAdaptive = chain.nStepTillAdaptive;
+    this.e = chain.e;
   }
   
   

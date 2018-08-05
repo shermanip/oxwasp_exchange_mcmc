@@ -43,6 +43,22 @@ public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
     CommonOps_DDRM.divide(1, this.inverseMass.getDDRM());
   }
   
+  /**CONSTRUCTOR
+   * Constructor for extending the length of the chain and resume running it
+   * Does a shallow copy of the provided chain and extending the member variable chainArray
+   * @param chain Chain to be extended
+   * @param nMoreSteps Number of steps to be extended
+   */
+  public HamiltonianMonteCarlo(HamiltonianMonteCarlo chain, int nMoreSteps) {
+    //call superconstructor to do a shallow copy and extend the chain
+    //also shallow copy the chain's member variables
+    super(chain, nMoreSteps);
+    this.momentumScale = chain.momentumScale;
+    this.inverseMass = chain.inverseMass;
+    this.sizeLeapFrog = chain.sizeLeapFrog; 
+    this.nLeapFrog = chain.nLeapFrog;
+  }
+  
   /**OVERRIDE: RUN
    * Take multiple HMC steps to complete the MCMC
    */

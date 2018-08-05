@@ -39,7 +39,8 @@ public class RandomWalkMetropolisHastings {
    * @param chainLength Length of the chain to be obtained
    * @param rng Random number generator all the random numbers
    */
-  public RandomWalkMetropolisHastings(TargetDistribution target, int chainLength, MersenneTwister rng){
+  public RandomWalkMetropolisHastings(TargetDistribution target, int chainLength,
+      MersenneTwister rng){
     //assign member variables
     this.target = target;
     this.chainLength = chainLength;
@@ -51,6 +52,31 @@ public class RandomWalkMetropolisHastings {
     
   }
   
+  /**CONSTRUCTOR
+   * Constructor for extending the length of the chain and resume running it
+   * Does a shallow copy of the provided chain and extending the member variable chainArray
+   * @param chain Chain to be extended
+   * @param nMoreSteps Number of steps to be extended
+   */
+  public RandomWalkMetropolisHastings(RandomWalkMetropolisHastings chain, int nMoreSteps){
+    //do a shallow copy of chain
+    this.target = chain.target;
+    this.chainLength = chain.chainLength + nMoreSteps;
+    this.chainArray = new SimpleMatrix(this.chainLength + nMoreSteps, this.getNDim());
+    this.chainMean = chain.chainMean;
+    this.chainCovariance = chain.chainCovariance;
+    this.acceptanceArray = chain.acceptanceArray;
+    this.nStep = chain.nStep;
+    this.nAccept = chain.nAccept;
+    this.rng = chain.rng;
+    
+    //deep copy the content of chainArray the old chain to the new chain
+    //these contain the values of the MCMC
+    for (int i=0; i<chain.chainArray.getNumElements(); i++) {
+      this.chainArray.set(i, chain.chainArray.get(i));
+    }
+    
+  }
   
   /**METHOD: STEP
    * This chains takes a Metropolis-Hastings step and updates it member variables-

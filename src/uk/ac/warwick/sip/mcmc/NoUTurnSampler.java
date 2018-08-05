@@ -36,6 +36,19 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     this.deltaMax = 1000;
   }
   
+  /**CONSTRUCTOR
+   * Constructor for extending the length of the chain and resume running it
+   * Does a shallow copy of the provided chain and extending the member variable chainArray
+   * @param chain Chain to be extended
+   * @param nMoreSteps Number of steps to be extended
+   */
+  public NoUTurnSampler(NoUTurnSampler chain, int nMoreSteps) {
+    //call superconstructor to do a shallow copy and extend the chain
+    //also shallow copy the chain's member variables
+    super(chain, nMoreSteps);
+    this.deltaMax = chain.deltaMax;
+  }
+  
   
   /**OVERRIDE: STEP
    * Does a step using the No U Turn Sampler
