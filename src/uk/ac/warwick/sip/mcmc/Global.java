@@ -13,7 +13,7 @@ public class Global {
   public static void main(String[] args) {
     
     int nDim = 32;
-    int chainLength = 1000;
+    int chainLength = 10000;
     MersenneTwister rng = new MersenneTwister(-280845742);
     SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
     SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(2.38, 2)/((double)nDim));
@@ -24,8 +24,8 @@ public class Global {
     
     int nChain = 6;
     RandomWalkMetropolisHastings [] chainArray = new RandomWalkMetropolisHastings [nChain];
-    SimpleMatrix initialPositionCov = SimpleMatrix.identity(nDim);
-    initialPositionCov = initialPositionCov.scale(0);
+    SimpleMatrix initialPositionScale = SimpleMatrix.identity(nDim);
+    initialPositionScale = initialPositionScale.scale(5.0);
     
     for (int iChain=0; iChain<nChain; iChain++) {
       chainArray[iChain] =  new HomogeneousRwmh(target, chainLength,
@@ -34,7 +34,7 @@ public class Global {
       for (int i=0; i<nDim; i++) {
         initial.set(i, rng.nextGaussian());
       }
-      initial = initialPositionCov.mult(initial);
+      initial = initialPositionScale.mult(initial);
       chainArray[iChain].setInitialValue(initial.getDDRM().getData());
       chainArray[iChain].run();
     }
@@ -50,6 +50,17 @@ public class Global {
       frame.setSize(800, 600);
       frame.setVisible(true);
     }
+    
+    GelmanRubinF fStatistic = new GelmanRubinF(chainArray);
+    double [] f = fStatistic.getGelmanRubinFArray(0, 1000);
+    Plot2DPanel fPlot = new Plot2DPanel();
+    fPlot.addLinePlot("f",f);
+    
+     // put the PlotPanel in a JFrame, as a JPanel
+    JFrame frame = new JFrame("a plot panel");
+    frame.setContentPane(fPlot);
+    frame.setSize(800, 600);
+    frame.setVisible(true);
     
   }
   
