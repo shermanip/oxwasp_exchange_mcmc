@@ -268,6 +268,37 @@ public class RandomWalkMetropolisHastings {
     return this.chainMean.getDDRM().getData();
   }
   
+  /**METHOD: GET CHAIN COVARIANCE
+   * @return The chain covariance at the current step (nDim x nDim symmetrical matrix)
+   */
+  public double [] getChainCovariance() {
+    return this.chainCovariance.getDDRM().getData();
+  }
+  
+  /**METHOD: GET POSTERIOR EXPECTATAION
+   * Call the calculatePosteriorStatistics prior to calling this method
+   * @return Posterior expectation with regards to burning in (nDim vector)
+   */
+  public double [] getPosteriorExpectation() {
+    return this.posteriorExpectation.getDDRM().getData();
+  }
+  
+  /**METHOD: GET POSTERIOR EXPECTATAION
+   * Call the calculatePosteriorStatistics prior to calling this method
+   * @return Monte carlo error of the posterior expectataion (nDim vector)
+   */
+  public double [] getMonteCarloError() {
+    return this.monteCarloError.getDDRM().getData();
+  }
+  
+  /**METHOD: GET POSTERIOR COVARIANCE
+   * Call the calculatePosteriorStatistics prior to calling this method
+   * @return Posterior covariance with regards to burning in (nDim x nDim symmetrical matrix)
+   */
+  public double [] getPosteriorCovariance() {
+    return this.posteriorCovariance.getDDRM().getData();
+  }
+  
   /**METHOD: GET ACCEPTANCE RATE
    * @return The estimate acceptance rate at each step
    */
@@ -332,19 +363,35 @@ public class RandomWalkMetropolisHastings {
     
   }
   
+  /**METHOD: CALCULATE POSTERIOR STATISTICS
+   * Calculates the posterior expectation, posterior covariance and the monte carlo error for the
+   * posterior expectation. These then can be obtained using the method getPosteriorExpectation,
+   * getPosteriorCovariance and getMonteCarloError
+   * @param nBurnIn Number of samples to be ignored at the start of the chain
+   */
   public void calculatePosteriorStatistics(int nBurnIn) {
+    
+    //instantiate matrices for the posterior statistics
     this.posteriorExpectation = new SimpleMatrix(this.getNDim(),1);
     this.monteCarloError = new SimpleMatrix(this.getNDim(),1);
     this.posteriorCovariance = new SimpleMatrix(this.getNDim(),this.getNDim());
     
+    //calculate the posterior statistics
     this.calculatePosteriorExpectation(nBurnIn);
     this.calculateMonteCarloError(nBurnIn);
     this.calculatePosteriorCovariance(nBurnIn);
   }
   
+  /**METHOD: CALCULATE POSTERIOR EXPECTATION
+   * Calulates the posterior expectation, with regards to the burn in
+   * @param nBurnIn Number of samples to be ignored at the start of the chain
+   */
   protected void calculatePosteriorExpectation(int nBurnIn) {
+    //for each dimension, calculate the sample mean
     for (int i=0; i<this.getNDim(); i++) {
+      //extract the vector from the burn in for this dimension
       SimpleMatrix burntChain = this.chainArray.extractMatrix(nBurnIn, SimpleMatrix.END, i, i+1);
+      //calculate sample mean
       this.posteriorExpectation.set(i,
           burntChain.elementSum() / ( (double) (this.chainLength - nBurnIn)) );
     }
@@ -352,17 +399,18 @@ public class RandomWalkMetropolisHastings {
   
   /**METHOD: CALCULATE MONTE CARLO ERROR
    * Calculate the Monte Carlo error in calculate the mean, this is done using batching
-   * It is saved in the member variable chainMonteCarloError
+   * The number of batches used is sqrt(n)
+   * @param nBurnIn Number of samples to be ignored at the start of the chain
    */
   protected void calculateMonteCarloError(int nBurnIn) {
-    
+    //for each dimension
     for (int i=0; i<this.getNDim(); i++) {
+      //extract the vector from the burn in for this dimension
       SimpleMatrix burntChain = this.chainArray.extractMatrix(nBurnIn, SimpleMatrix.END, i, i+1);
-      int n = burntChain.numRows();
+      int n = burntChain.numRows(); //get the number of samples of the burnt chain
       
       //calculate the number of batches
       int nBatch = (int) Math.round(Math.sqrt((double) n));
-      
       //declare matrices to store the following
       SimpleMatrix batchLength = new SimpleMatrix(nBatch,1); //the length of each batch
       SimpleMatrix batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
@@ -379,7 +427,7 @@ public class RandomWalkMetropolisHastings {
       for (int iBatch=0; iBatch<nBatch; iBatch++) {
         //get the pointer of the end of the batch + 1
         indexEnd = (int) Math.round(((double)(iBatch+1)) * chainLengthDouble / nBatchDouble);
-        //save the length of this match
+        //save the length of this batch
         batchLength.set(iBatch, (double) (indexEnd - indexStart));
         //get the samples from this batch
         SimpleMatrix batchVector = burntChain.extractMatrix(indexStart, indexEnd, 0, 1);
@@ -398,15 +446,25 @@ public class RandomWalkMetropolisHastings {
     }
   }
   
+  /**METHOD: CALCULATE POSTERIOR COVARIANCE
+   * Calculate the posterior covariance, with regards to the burn in
+   * @param nBurnIn Number of samples to be ignored at the start of the chain
+   */
   protected void calculatePosteriorCovariance(int nBurnIn) {
+    //for each sample
     for (int i=0; i<(this.chainLength-nBurnIn); i++) {
-      SimpleMatrix x = this.chainArray.extractVector(true, nBurnIn+i);
-      SimpleMatrix xOuter = new SimpleMatrix(this.getNDim(), this.getNDim());
-      CommonOps_DDRM.transpose(x.getDDRM());
+      //get the vector for this step
+      SimpleMatrix x = this.chainArray.extractVector(true, nBurnIn+i); //this is a row vector
+      CommonOps_DDRM.transpose(x.getDDRM()); //transpose for a column vector
+      //x subtract mean
       CommonOps_DDRM.subtractEquals(x.getDDRM(), this.posteriorExpectation.getDDRM());
+      //instantiate a matrix for this outer product
+      SimpleMatrix xOuter = new SimpleMatrix(this.getNDim(), this.getNDim());
       CommonOps_DDRM.multOuter(x.getDDRM(), xOuter.getDDRM());
+      //+= the outer product to this.posteriorCovariance
       CommonOps_DDRM.addEquals(this.posteriorCovariance.getDDRM(), xOuter.getDDRM());
     }
+    //use the bias corrected divide
     CommonOps_DDRM.divide(this.posteriorCovariance.getDDRM()
         , (double) (this.chainLength-nBurnIn-1) );
     
