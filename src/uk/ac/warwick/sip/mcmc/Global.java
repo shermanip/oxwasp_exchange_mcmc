@@ -41,6 +41,11 @@ public class Global {
     frame.setSize(800, 600);
     frame.setVisible(true);
     
+    double [] acf = chain.getAcf(0, 20);
+    for (int i=0; i<20; i++) {
+      System.out.println(acf[i]);
+    }
+    
   }
   
   
