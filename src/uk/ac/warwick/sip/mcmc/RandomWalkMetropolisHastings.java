@@ -237,6 +237,14 @@ public class RandomWalkMetropolisHastings {
     return this.chainArray.getDDRM().getData();
   }
   
+  /**METHOD: GET CHAIN (of a specific dimension)
+   * @param nDim Which dimension to extract from the chain
+   * @return double array of the chain, each element correspond to a MCMC step
+   */
+  public double [] getChain(int nDim) {
+    return this.chainArray.extractVector(false, nDim).getDDRM().getData();
+  }
+  
   /**METHOD: GET END OF CHAIN
    * @return double array, vector of the last postion of the chain
    */

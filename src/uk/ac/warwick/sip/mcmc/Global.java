@@ -13,37 +13,42 @@ public class Global {
   public static void main(String[] args) {
     
     int nDim = 32;
-    int chainLength = 10000;
+    int chainLength = 1000;
     MersenneTwister rng = new MersenneTwister(-280845742);
-    //SimpleMatrix proposalCovariance = SimpleMatrix.identity(nDim).scale(0.01/32.0);
-    SimpleMatrix targetCovariance = getRandomCovariance(nDim, rng);
+    SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
+    SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(2.38, 2)/((double)nDim));
     SimpleMatrix massVector = new SimpleMatrix(nDim,1);
     massVector = massVector.plus(1.0);
     double sizeLeapFrog = 0.5;
-    //SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
     
-    long timeStart = System.currentTimeMillis();
-    RandomWalkMetropolisHastings chain = 
-        new NoUTurnSampler(target, chainLength, massVector, sizeLeapFrog,
-            rng );
-    chain.run();
-    System.out.println("Time taken");
-    System.out.println(System.currentTimeMillis() - timeStart);
+    int nChain = 6;
+    RandomWalkMetropolisHastings [] chainArray = new RandomWalkMetropolisHastings [nChain];
+    SimpleMatrix initialPositionCov = SimpleMatrix.identity(nDim);
+    initialPositionCov = initialPositionCov.scale(0);
     
-    Plot2DPanel tracePlot = new Plot2DPanel();
-    DMatrixRMaj trace = chain.chainArray.extractVector(false, 0).getMatrix();
-    tracePlot.addLinePlot("trace",trace.data);
+    for (int iChain=0; iChain<nChain; iChain++) {
+      chainArray[iChain] =  new HomogeneousRwmh(target, chainLength,
+          proposalCovariance, rng) ;
+      SimpleMatrix initial = new SimpleMatrix(nDim, 1);
+      for (int i=0; i<nDim; i++) {
+        initial.set(i, rng.nextGaussian());
+      }
+      initial = initialPositionCov.mult(initial);
+      chainArray[iChain].setInitialValue(initial.getDDRM().getData());
+      chainArray[iChain].run();
+    }
     
-     // put the PlotPanel in a JFrame, as a JPanel
-    JFrame frame = new JFrame("a plot panel");
-    frame.setContentPane(tracePlot);
-    frame.setSize(800, 600);
-    frame.setVisible(true);
-    
-    double [] acf = chain.getAcf(0, 20);
-    for (int i=0; i<20; i++) {
-      System.out.println(acf[i]);
+    for (int iChain=0; iChain<nChain; iChain++) {
+      Plot2DPanel tracePlot = new Plot2DPanel();
+      double [] trace = chainArray[iChain].getChain(0);
+      tracePlot.addLinePlot("trace",trace);
+      
+       // put the PlotPanel in a JFrame, as a JPanel
+      JFrame frame = new JFrame("a plot panel");
+      frame.setContentPane(tracePlot);
+      frame.setSize(800, 600);
+      frame.setVisible(true);
     }
     
   }
@@ -54,6 +59,7 @@ public class Global {
    * @return cholesky decomposition if possible, other null
    */
   public static SimpleMatrix cholesky(SimpleMatrix x) {
+    x = new SimpleMatrix(x);
     CholeskyDecomposition_F64<DMatrixRMaj> chol = DecompositionFactory_DDRM.chol(x.numRows(),true);
     if( !chol.decompose(x.getMatrix())) {
       return null;
