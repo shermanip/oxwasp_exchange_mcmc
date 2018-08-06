@@ -469,4 +469,16 @@ public class RandomWalkMetropolisHastings {
         , (double) (this.chainLength-nBurnIn-1) );
     
   }
+  
+  /**METHOD: GET DIFFERENCE LN ERROR
+   * Call the calculatePosteriorStatistics prior to calling this method
+   * Calculate ln(chain std) - ln (monte carlo error)
+   * This gives some indiciation how large/small the monte carlo error, the chain should stop if
+   * this difference is small, e.g. <6.9
+   * @return Array of ln(chain std) - ln (monte carlo error), an entry for each dimension
+   */
+  public double [] getDifferenceLnError() {
+    SimpleMatrix posteriorStd = this.posteriorCovariance.diag().elementPower(0.5);
+    return posteriorStd.elementLog().minus(this.monteCarloError.elementLog()).getDDRM().getData();
+  }
 }

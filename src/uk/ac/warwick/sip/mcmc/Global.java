@@ -51,8 +51,8 @@ public class Global {
     }
     
     chainArray[0].calculatePosteriorStatistics(100);
-    SimpleMatrix exp = chainArray[0].posteriorCovariance;
-    exp.print();
+    chainArray[0].posteriorExpectation.print();
+    
   }
   
   
