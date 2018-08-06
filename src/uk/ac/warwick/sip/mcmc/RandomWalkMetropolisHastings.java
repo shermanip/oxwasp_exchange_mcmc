@@ -32,6 +32,16 @@ public class RandomWalkMetropolisHastings {
   
   protected MersenneTwister rng; //random number generator
   
+  //temporary member variables, statistics based on the chain and burn in
+  //these member variables will be instantised when the method calculateChainStatistics is called
+  
+  //the mean of the chain (for each dimension) after burn in
+  protected SimpleMatrix posteriorExpectation;
+  //monte carlo error of the mean, after burn in
+  protected SimpleMatrix monteCarloError;
+  //covariance of the chain, after burn in
+  protected SimpleMatrix posteriorCovariance;
+  
   /**CONSTRUCTOR
    * Metropolis Hastings algorithm which targets a provided distribution using Gaussian random walk
    * @param target Object which has a method to call the pdf
@@ -189,7 +199,6 @@ public class RandomWalkMetropolisHastings {
     CommonOps_DDRM.addEquals(this.chainMean.getDDRM(), x.getDDRM());
     CommonOps_DDRM.divide(this.chainMean.getDDRM(), n);
     
-    
     //if this is the first step
     if (this.nStep == 1){
       //get the initial value of the chain and transpose it to be a column vector
@@ -320,6 +329,86 @@ public class RandomWalkMetropolisHastings {
     SimpleMatrix chainEndTrim = chain.extractMatrix(0, chain.numRows()-lag, 0, 1);
     //multiply the trimmed chains
     return chainFrontTrim.elementMult(chainEndTrim).elementSum();
+    
+  }
+  
+  public void calculatePosteriorStatistics(int nBurnIn) {
+    this.posteriorExpectation = new SimpleMatrix(this.getNDim(),1);
+    this.monteCarloError = new SimpleMatrix(this.getNDim(),1);
+    this.posteriorCovariance = new SimpleMatrix(this.getNDim(),this.getNDim());
+    
+    this.calculatePosteriorExpectation(nBurnIn);
+    this.calculateMonteCarloError(nBurnIn);
+    this.calculatePosteriorCovariance(nBurnIn);
+  }
+  
+  protected void calculatePosteriorExpectation(int nBurnIn) {
+    for (int i=0; i<this.getNDim(); i++) {
+      SimpleMatrix burntChain = this.chainArray.extractMatrix(nBurnIn, SimpleMatrix.END, i, i+1);
+      this.posteriorExpectation.set(i,
+          burntChain.elementSum() / ( (double) (this.chainLength - nBurnIn)) );
+    }
+  }
+  
+  /**METHOD: CALCULATE MONTE CARLO ERROR
+   * Calculate the Monte Carlo error in calculate the mean, this is done using batching
+   * It is saved in the member variable chainMonteCarloError
+   */
+  protected void calculateMonteCarloError(int nBurnIn) {
+    
+    for (int i=0; i<this.getNDim(); i++) {
+      SimpleMatrix burntChain = this.chainArray.extractMatrix(nBurnIn, SimpleMatrix.END, i, i+1);
+      int n = burntChain.numRows();
+      
+      //calculate the number of batches
+      int nBatch = (int) Math.round(Math.sqrt((double) n));
+      
+      //declare matrices to store the following
+      SimpleMatrix batchLength = new SimpleMatrix(nBatch,1); //the length of each batch
+      SimpleMatrix batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
+      
+      //declare variables for pointing to specific parts of the chain in order to obtain the batch
+      //samples
+      int indexStart = 0;
+      int indexEnd;
+      //get double versions of nBatch and n
+      double nBatchDouble = (double) nBatch;
+      double chainLengthDouble = (double) n;
+      
+      //for each batch
+      for (int iBatch=0; iBatch<nBatch; iBatch++) {
+        //get the pointer of the end of the batch + 1
+        indexEnd = (int) Math.round(((double)(iBatch+1)) * chainLengthDouble / nBatchDouble);
+        //save the length of this match
+        batchLength.set(iBatch, (double) (indexEnd - indexStart));
+        //get the samples from this batch
+        SimpleMatrix batchVector = burntChain.extractMatrix(indexStart, indexEnd, 0, 1);
+        //work out the sample mean and save it
+        batchArray.set(iBatch, batchVector.elementSum()/ batchLength.get(iBatch) );
+        //set the pointer for the next batch
+        indexStart = indexEnd;
+      }
+      
+      //calculate the monte carlo error and save it
+      double monteCarloError_i = batchArray.minus(this.posteriorExpectation.get(i)).elementPower(2)
+          .elementMult(batchLength).elementSum();
+      monteCarloError_i /= ((double)(nBatch * n));
+      monteCarloError_i = Math.sqrt(monteCarloError_i);
+      this.monteCarloError.set(i, monteCarloError_i);
+    }
+  }
+  
+  protected void calculatePosteriorCovariance(int nBurnIn) {
+    for (int i=0; i<(this.chainLength-nBurnIn); i++) {
+      SimpleMatrix x = this.chainArray.extractVector(true, nBurnIn+i);
+      SimpleMatrix xOuter = new SimpleMatrix(this.getNDim(), this.getNDim());
+      CommonOps_DDRM.transpose(x.getDDRM());
+      CommonOps_DDRM.subtractEquals(x.getDDRM(), this.posteriorExpectation.getDDRM());
+      CommonOps_DDRM.multOuter(x.getDDRM(), xOuter.getDDRM());
+      CommonOps_DDRM.addEquals(this.posteriorCovariance.getDDRM(), xOuter.getDDRM());
+    }
+    CommonOps_DDRM.divide(this.posteriorCovariance.getDDRM()
+        , (double) (this.chainLength-nBurnIn-1) );
     
   }
 }

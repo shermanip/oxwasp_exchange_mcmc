@@ -11,7 +11,6 @@ import org.math.plot.Plot2DPanel;
 public class Global {
   
   public static void main(String[] args) {
-    
     int nDim = 32;
     int chainLength = 10000;
     MersenneTwister rng = new MersenneTwister(-280845742);
@@ -22,7 +21,7 @@ public class Global {
     double sizeLeapFrog = 0.5;
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
     
-    int nChain = 6;
+    int nChain = 1;
     RandomWalkMetropolisHastings [] chainArray = new RandomWalkMetropolisHastings [nChain];
     SimpleMatrix initialPositionScale = SimpleMatrix.identity(nDim);
     initialPositionScale = initialPositionScale.scale(5.0);
@@ -51,17 +50,9 @@ public class Global {
       frame.setVisible(true);
     }
     
-    GelmanRubinF fStatistic = new GelmanRubinF(chainArray);
-    double [] f = fStatistic.getGelmanRubinFArray(0, 1000);
-    Plot2DPanel fPlot = new Plot2DPanel();
-    fPlot.addLinePlot("f",f);
-    
-     // put the PlotPanel in a JFrame, as a JPanel
-    JFrame frame = new JFrame("a plot panel");
-    frame.setContentPane(fPlot);
-    frame.setSize(800, 600);
-    frame.setVisible(true);
-    
+    chainArray[0].calculatePosteriorStatistics(100);
+    SimpleMatrix exp = chainArray[0].posteriorCovariance;
+    exp.print();
   }
   
   
