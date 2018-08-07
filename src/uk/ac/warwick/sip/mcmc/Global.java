@@ -22,7 +22,7 @@ public class Global {
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
     
     int nChain = 1;
-    RandomWalkMetropolisHastings [] chainArray = new RandomWalkMetropolisHastings [nChain];
+    Mcmc [] chainArray = new RandomWalkMetropolisHastings [nChain];
     SimpleMatrix initialPositionScale = SimpleMatrix.identity(nDim);
     initialPositionScale = initialPositionScale.scale(5.0);
     

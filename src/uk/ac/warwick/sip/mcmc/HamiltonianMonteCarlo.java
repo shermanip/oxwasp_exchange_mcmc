@@ -12,7 +12,7 @@ import org.ejml.simple.SimpleMatrix;
  * 
  * Use the method run() to run the chain
  */
-public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
+public class HamiltonianMonteCarlo extends Mcmc {
   
   //column vector, squared root of the diagonal of the mass matrix, for each dimension
   protected SimpleMatrix momentumScale;
@@ -67,15 +67,6 @@ public class HamiltonianMonteCarlo extends RandomWalkMetropolisHastings {
     for (int i=0; i<(this.chainLength-1); i++) {
       this.step();
     }
-  }
-  
-  /**OVERRIDE: STEP
-   * Throws exception as HMC cannot do a Metropolis Hastings step
-   * @param proposalCovarianceChol not used
-   */
-  @Override
-  public void step(SimpleMatrix proposalCovarianceChol){
-    throw new RuntimeException("HamiltonianMonteCarlo cannot do a Metropolis Hastings step");
   }
   
   /**OVERRIDE: STEP

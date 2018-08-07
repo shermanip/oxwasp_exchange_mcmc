@@ -16,12 +16,12 @@ import org.apache.commons.math3.stat.inference.OneWayAnova;
 public class GelmanRubinF {
   
   //array of MCMC, mcmc chains are represented as a double [], each entry for each step
-  protected RandomWalkMetropolisHastings [] chainArray;
+  protected Mcmc [] chainArray;
   
   /**CONSTRUCTOR
    * @param chainArray array of chains to be used for the Gelman Rubin statistic
    */
-  public GelmanRubinF(RandomWalkMetropolisHastings [] chainArray) {
+  public GelmanRubinF(Mcmc [] chainArray) {
     this.chainArray = chainArray;
   }
   
