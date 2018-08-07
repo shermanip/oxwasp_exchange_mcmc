@@ -68,10 +68,10 @@ public abstract class Mcmc {
     //do a shallow copy of chain
     this.target = chain.target;
     this.chainLength = chain.chainLength + nMoreSteps;
-    this.chainArray = new SimpleMatrix(this.chainLength + nMoreSteps, this.getNDim());
+    this.chainArray = new SimpleMatrix(this.chainLength, this.getNDim());
     this.chainMean = chain.chainMean;
     this.chainCovariance = chain.chainCovariance;
-    this.acceptanceArray = chain.acceptanceArray;
+    this.acceptanceArray = new double [this.chainLength - 1];
     this.nStep = chain.nStep;
     this.nAccept = chain.nAccept;
     this.rng = chain.rng;
@@ -80,6 +80,10 @@ public abstract class Mcmc {
     //these contain the values of the MCMC
     for (int i=0; i<chain.chainArray.getNumElements(); i++) {
       this.chainArray.set(i, chain.chainArray.get(i));
+    }
+    //deep copy the acceptanceArray
+    for (int i=0; i<chain.acceptanceArray.length; i++) {
+      this.acceptanceArray[i] = chain.acceptanceArray[i];
     }
     
   }

@@ -37,6 +37,8 @@ public class Global {
       chainArray[iChain].setInitialValue(initial.getDDRM().getData());
       chainArray[iChain].run();
     }
+    //chainArray[0] =  new HomogeneousRwmh((HomogeneousRwmh)chainArray[0], 759);
+    //chainArray[0].run();
     
     for (int iChain=0; iChain<nChain; iChain++) {
       Plot2DPanel tracePlot = new Plot2DPanel();

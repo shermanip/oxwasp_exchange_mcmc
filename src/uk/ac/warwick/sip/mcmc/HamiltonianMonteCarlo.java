@@ -64,7 +64,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
    */
   @Override
   public void run() {
-    for (int i=0; i<(this.chainLength-1); i++) {
+    while (this.nStep < (this.chainLength-1)) {
       this.step();
     }
   }
