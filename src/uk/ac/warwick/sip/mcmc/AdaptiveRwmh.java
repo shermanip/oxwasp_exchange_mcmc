@@ -54,10 +54,11 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
   @Override
   public void step(SimpleMatrix currentPosition) {
     if (this.nStep < this.nStepTillAdaptive){
-      super.step(currentPosition); //homogeneous Metropolis-Hastings step
+      this.metropolisHastingsStep(currentPosition); //homogeneous Metropolis-Hastings step
     } else {
       this.adaptiveStep(currentPosition); //adaptive Metropolis-Hastings step
     }
+    this.updateStatistics(currentPosition);
   }
   
   
@@ -76,6 +77,6 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     CommonOps_DDRM.addEquals(proposalCovariance.getDDRM(), diagElement.getDDRM());
     //do a Metropolis-Hastings step with this proposal covariance
     this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
-    super.step(currentPosition);
+    super.metropolisHastingsStep(currentPosition);
   }
 }

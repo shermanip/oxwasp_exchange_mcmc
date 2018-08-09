@@ -145,12 +145,14 @@ public abstract class Mcmc {
   
   /**METHOD: SET INITIAL VALUE
    * Set the initial value of the chain, to be called before running the chain
+   * Also set the chainMean
    * @param initialValue double [] containing the values of the initial position
    */
   public void setInitialValue(double [] initialValue) {
     for (int i=0; i<initialValue.length; i++) {
       this.chainArray.set(i, initialValue[i]);
     }
+    this.chainMean = new SimpleMatrix(this.getNDim(), 1, true, initialValue);
   }
     
   /**METHOD: UPDATE STATISTICS
