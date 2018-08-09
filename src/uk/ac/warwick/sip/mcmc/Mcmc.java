@@ -378,7 +378,7 @@ public abstract class Mcmc {
    * Call the calculatePosteriorStatistics prior to calling this method
    * Calculate ln(chain std) - ln (monte carlo error)
    * This gives some indiciation how large/small the monte carlo error, the chain should stop if
-   * this difference is small, e.g. <6.9
+   * this difference is large, e.g. >6.9
    * @return Array of ln(chain std) - ln (monte carlo error), an entry for each dimension
    */
   public double [] getDifferenceLnError() {
