@@ -65,9 +65,9 @@ public class NormalDistribution extends TargetDistribution{
     //inverse covarianceCholInverse
     TriangularSolver_DDRM.invertLower(covarianceCholInverse.getDDRM().data, this.getNDim());
     //do the operation L^(T-1) * L^(-1) * x
-    SimpleMatrix covariance = new SimpleMatrix(this.nDim, this.nDim);
-    CommonOps_DDRM.multInner(covarianceCholInverse.getDDRM(), covariance.getDDRM());
-    return covariance.mult(x);
+    SimpleMatrix covarianceInverse = new SimpleMatrix(this.nDim, this.nDim);
+    CommonOps_DDRM.multInner(covarianceCholInverse.getDDRM(), covarianceInverse.getDDRM());
+    return covarianceInverse.mult(x);
     
   }
   

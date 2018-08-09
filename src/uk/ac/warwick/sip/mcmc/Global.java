@@ -11,13 +11,13 @@ import org.math.plot.Plot2DPanel;
 public class Global {
   
   public static void main(String[] args) {
-    int nDim = 64;
-    int chainLength = 1000000;
+    int nDim = 16;
+    int chainLength = 10000;
     MersenneTwister rng = new MersenneTwister(-280845742);
     SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
     SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(0.001, 2)/((double)nDim));
-    SimpleMatrix massVector = new SimpleMatrix(nDim,1);
-    massVector = massVector.plus(1.0);
+    SimpleMatrix massMatrix = SimpleMatrix.identity(nDim);
+    massMatrix = massMatrix.scale(1.0);
     int nLeapFrog = 100;
     double sizeLeapFrog = 0.5;
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
@@ -29,10 +29,10 @@ public class Global {
     initialPositionScale = initialPositionScale.scale(0.0);
     
     for (int iChain=0; iChain<nChain; iChain++) {
-      chainArray[iChain] =  new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng) ;
-      //chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massVector, sizeLeapFrog, nLeapFrog, rng) ;
-      //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massVector, sizeLeapFrog, rng) ;
-      //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massVector, nAdaptive, rng) ;
+      //chainArray[iChain] =  new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng) ;
+      chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massMatrix, sizeLeapFrog, nLeapFrog, rng) ;
+      //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massMatrix, sizeLeapFrog, rng) ;
+      //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massMatrix, nAdaptive, rng) ;
       //chainArray[iChain].setNThin(50);
       SimpleMatrix initial = new SimpleMatrix(nDim, 1);
       for (int i=0; i<nDim; i++) {
