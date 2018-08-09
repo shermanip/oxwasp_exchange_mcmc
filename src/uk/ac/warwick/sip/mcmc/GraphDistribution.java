@@ -11,6 +11,8 @@ public class GraphDistribution extends TargetDistribution {
 	//MINERVA object which can evaluate the log pdf
 	protected GraphicalModel graph;
 	protected int nMethodCall = 0; //number of times a method is called
+	protected double delta = 0.01; //the step size used to numerically calculate the diff
+	
 	
 	/**CONSTRUCTOR
 	 * Construct the target pdf using the minerva GraphicalModel object
@@ -36,20 +38,34 @@ public class GraphDistribution extends TargetDistribution {
 	 */
 	@Override
 	public double getPotential(SimpleMatrix x) {
-	  this.nMethodCall++;
+		this.nMethodCall++;
 		this.graph.setFreeParameters(x.getDDRM().getData());
 		return -this.graph.logPdf();
 	}
 	
 	/**IMPLEMENTED: GET D POTENTIAL
-	 * THROWS EXCPETION
-	 * TODO Implemented numerical differentiation
+	 * Returns a vector of partical diff of the potential
+	 * Differentation is done numerically for a given step size this.delta
 	 * @param x Where to evaluate the potential gradient
 	 * @return The evaluation of the potential gradient at x
 	 */
 	@Override
 	public SimpleMatrix getDPotential(SimpleMatrix x) {
-		throw new RuntimeException();
+		//instantiate a column vector
+		SimpleMatrix dPotential = new SimpleMatrix(this.getNDim(), 1);
+		//for each dimension
+		for (int iDim=0; iDim<this.getNDim(); iDim++) {
+			//get the position +/- a small number this.delta
+			SimpleMatrix xMinus = new SimpleMatrix(x);
+			SimpleMatrix xPlus = new SimpleMatrix(x);
+			xMinus.set(iDim, x.get(iDim)-this.delta);
+			xPlus.set(iDim, x.get(iDim)+this.delta);
+			//calculate the diff potential and save it for this dimension
+			double diffIPotential =(this.getPotential(xPlus) 
+					- this.getPotential(xMinus)) / (2*this.delta);
+			dPotential.set(iDim, diffIPotential);
+		}
+		return dPotential;
 	}
 
 }
