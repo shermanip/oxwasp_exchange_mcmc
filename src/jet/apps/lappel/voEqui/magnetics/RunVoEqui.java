@@ -50,7 +50,6 @@ import seed.minerva.diagnostics.magnetics.PickupCoils2DDataSourceJET2;
 import seed.minerva.util.GraphUtil;
 import seed.minerva.util.ReportingUtil;
 import uk.ac.warwick.sip.mcmc.GraphDistribution;
-import uk.ac.warwick.sip.mcmc.HomogeneousRwmh;
 import uk.ac.warwick.sip.mcmc.Mcmc;
 import uk.ac.warwick.sip.mcmc.MixtureAdaptiveRwmh;
 import uk.ac.warwick.sip.mcmc.RandomWalkMetropolisHastings;
