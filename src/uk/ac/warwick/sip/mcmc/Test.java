@@ -41,12 +41,16 @@ public class Test {
     //instantiate the chain
     Mcmc chain = new RandomWalkMetropolisHastings(target, chainLength, proposalCovariance, rng);
     
+    //instantiate column vector for the current value of the chain
+    SimpleMatrix x = chain.chainArray.extractVector(true, 0);
+    CommonOps_DDRM.transpose(x.getDDRM());
     //run the chain for nStep
     for (int i=0; i<nStep; i++) {
-      //instantiate column vector for the current value of the chain
-      SimpleMatrix x = chain.chainArray.extractVector(true, chain.nSample - 1);
-      CommonOps_DDRM.transpose(x.getDDRM());
       chain.step(x);
+      //save x to the chain array
+      for (int iDim = 0; iDim<chain.getNDim(); iDim++) {
+        chain.chainArray.set(i, iDim, x.get(iDim));
+      }
     }
     
     //declare array for storing squared error
