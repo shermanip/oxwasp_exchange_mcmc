@@ -49,6 +49,7 @@ import seed.minerva.diagnostics.magnetics.JETMagneticDiagnosticsDataSource;
 import seed.minerva.diagnostics.magnetics.PickupCoils2DDataSourceJET2;
 import seed.minerva.util.GraphUtil;
 import seed.minerva.util.ReportingUtil;
+import uk.ac.warwick.sip.mcmc.AdaptiveRwmh;
 import uk.ac.warwick.sip.mcmc.GraphDistribution;
 import uk.ac.warwick.sip.mcmc.Mcmc;
 import uk.ac.warwick.sip.mcmc.MixtureAdaptiveRwmh;
@@ -274,22 +275,24 @@ public class RunVoEqui {
 		if(run.mcmc) {
 			dump("Now starting MCMC");
 			
-			int sampleCount=2000;
-			int nChain = 16;
-			int window = 100;
+			int sampleCount=10000;
 			
 			//instantiate objects to be pass onto the mcmc object
 			TargetDistribution target = new GraphDistribution(m.graph); //contains the pdf
 			MersenneTwister rng = new MersenneTwister(-280845742); //random number generator
 			//set the proposal covariance, in adaptive methods this is the inital proposal
 			SimpleMatrix proposalCovariance = SimpleMatrix.identity(target.getNDim())
-					.scale(0.1/((double)target.getNDim()));
+					.scale(0.000001/((double)target.getNDim()));
 			
 			//instantiate the chain and set the initial values
 			Mcmc chain = new MixtureAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
 			
 			chain.setInitialValue(m.graph.getFreeParameters());
 			chain.run();
+			
+			chain.calculatePosteriorStatistics(0);
+			SimpleMatrix error = new SimpleMatrix(chain.getNDim(), 1, true, chain.getDifferenceLnError());
+			error.print();
 			
 			JyPlot tracePlot = new JyPlot();
 			tracePlot.figure();
@@ -300,6 +303,7 @@ public class RunVoEqui {
 			
 			double [] chainArray = chain.getChain();
 			double [] chainPosition = new double[chain.getNDim()];
+			
 			for (int iSample = 0; iSample < sampleCount; iSample++) {
 				
 				for (int iDim=0; iDim<chain.getNDim(); iDim++) {
@@ -330,6 +334,7 @@ public class RunVoEqui {
 			
 			acceptancePlot.show();
 			acceptancePlot.exec();
+			
 		}
 	}
 	private static void plotMcmc(long sampleCount,String outputFolder,long timeValLong,double[] sampleVec) {
