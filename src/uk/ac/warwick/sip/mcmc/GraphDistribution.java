@@ -10,6 +10,7 @@ public class GraphDistribution extends TargetDistribution {
 	
 	//MINERVA object which can evaluate the log pdf
 	protected GraphicalModel graph;
+	protected int nMethodCall = 0; //number of times a method is called
 	
 	/**CONSTRUCTOR
 	 * Construct the target pdf using the minerva GraphicalModel object
@@ -35,6 +36,7 @@ public class GraphDistribution extends TargetDistribution {
 	 */
 	@Override
 	public double getPotential(SimpleMatrix x) {
+	  this.nMethodCall++;
 		this.graph.setFreeParameters(x.getDDRM().getData());
 		return -this.graph.logPdf();
 	}
