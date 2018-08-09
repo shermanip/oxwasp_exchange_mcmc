@@ -8,7 +8,6 @@ import org.ejml.simple.SimpleMatrix;
 /**CLASS: MCMC
  * Framework for MCMC, method to be implemented:
  *   -step() (one step)
- *   -run() (multiple steps to the end of the chain)
  * The target distribution is provided via the constructor.
  * The chain length and a MersenneTwister is to be provided via the constructor.
  * The samples are stored in the member variable chainArray as a design matrix format
@@ -24,7 +23,9 @@ public abstract class Mcmc {
   protected SimpleMatrix chainMean; //the mean of the chain at the current step (column vector)
   protected SimpleMatrix chainCovariance; //covariance of the chain at the current step
   
-    //the mean of the chain (for each dimension) after burn in
+  //temporary member variables, statistics based on the chain and burn in
+  //these member variables will be instantised when the method calculateChainStatistics is called
+  //the mean of the chain (for each dimension) after burn in
   protected SimpleMatrix posteriorExpectation;
   //monte carlo error of the mean, after burn in
   protected SimpleMatrix monteCarloError;
@@ -40,10 +41,7 @@ public abstract class Mcmc {
   
   protected MersenneTwister rng; //random number generator
   
-  //temporary member variables, statistics based on the chain and burn in
-  //these member variables will be instantised when the method calculateChainStatistics is called
   
-
   
   /**CONSTRUCTOR
    * @param target Object which has a method to call the pdf
@@ -99,7 +97,11 @@ public abstract class Mcmc {
   /**METHOD: RUN
    * Does (chainLength - 1) MCMC steps
    */
-  public abstract void run();
+  public void run() {
+    while (this.nStep < (this.chainLength-1)) {
+      this.step();
+    }
+  }
   
   /**METHOD: ACCEPT STEP
    * The chainArray is updated at this.nStep+1.

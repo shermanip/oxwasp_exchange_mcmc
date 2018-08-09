@@ -59,16 +59,6 @@ public class HamiltonianMonteCarlo extends Mcmc {
     this.nLeapFrog = chain.nLeapFrog;
   }
   
-  /**OVERRIDE: RUN
-   * Take multiple HMC steps to complete the MCMC
-   */
-  @Override
-  public void run() {
-    while (this.nStep < (this.chainLength-1)) {
-      this.step();
-    }
-  }
-  
   /**OVERRIDE: STEP
    * Does a HMC step. The position vector is the current position of the chain.
    * Momentum is generated randomly using Gaussian.

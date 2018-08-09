@@ -57,17 +57,6 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     this.updateStatistics();
   }
   
-  /**IMPLEMENTED: RUN
-   * Throws exception
-   * Subclasses should override this if required
-   * Overridden methods will use this to run the entire chain
-   */
-  @Override
-  public void run() {
-    throw new RuntimeException("RandomWalkMetropolisHastings cannot use the method run()"
-        + " because a proposal covariance is required for every step");
-  }
-  
   /**METHOD: METROPOLIS HASTINGS STEP
    * Does a Metropolis-Hastings step
    * Saves the new value to the chain array given a proposal covariance

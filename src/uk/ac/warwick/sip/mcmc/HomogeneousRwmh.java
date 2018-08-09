@@ -51,13 +51,4 @@ public class HomogeneousRwmh extends RandomWalkMetropolisHastings{
     this.updateStatistics();
   }
   
-  /**OVERRIDE: RUN
-   * Take multiple Metropolis-Hastings steps to complete the MCMC
-   */
-  @Override
-  public void run() {
-    while (this.nStep < (this.chainLength-1)) {
-      this.step();
-    }
-  }
 }
