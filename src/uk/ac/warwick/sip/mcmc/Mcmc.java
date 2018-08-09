@@ -35,9 +35,12 @@ public abstract class Mcmc {
   //array of acceptance rate at each step
   protected double [] acceptanceArray;
   
-  protected int nStep = 0; //number of steps taken so far
+  protected int nStep = 0; //number of MCMC steps taken so far
+  protected int nSample = 1; //number of MCMC samples taken so far (including the initial value)
   protected int chainLength; //the total length of the chain
   protected int nAccept = 0; //the number of acceptance steps taken
+  
+  protected int nThin = 1; //thinning parameter
   
   protected MersenneTwister rng; //random number generator
   
@@ -74,7 +77,9 @@ public abstract class Mcmc {
     this.chainCovariance = chain.chainCovariance;
     this.acceptanceArray = new double [this.chainLength - 1];
     this.nStep = chain.nStep;
+    this.nSample = chain.nSample;
     this.nAccept = chain.nAccept;
+    this.nThin = chain.nThin;
     this.rng = chain.rng;
     
     //deep copy the content of chainArray the old chain to the new chain
@@ -90,39 +95,51 @@ public abstract class Mcmc {
   }
   
   /**METHOD: STEP
-   * Does a MCMC step
+   * Does a MCMC step and calls updateStatistics
+   * @param currentStep Column vector of the current step of the MCMC, to be modified
    */
-  public abstract void step();
+  public abstract void step(SimpleMatrix currentStep);
   
   /**METHOD: RUN
-   * Does (chainLength - 1) MCMC steps
+   * Get (chainLength - 1) MCMC samples, number of steps is (chainLength-1)*nThin
    */
   public void run() {
-    while (this.nStep < (this.chainLength-1)) {
-      this.step();
+    //for (this.chainLength-1) times (this.nSample = 1 at construction)
+    //a while loop is used as the chain can start from this.nStep other than 0
+    while (this.nSample < this.chainLength) {
+      
+      //instantiate column vector for the current value of the chain
+      SimpleMatrix x = this.chainArray.extractVector(true, this.nSample - 1);
+      CommonOps_DDRM.transpose(x.getDDRM());
+      //for nThin times, take a MCMC step
+      for (int iThin=0; iThin<this.nThin; iThin++) {
+        this.step(x);
+      }
+      //save x to the chain array
+      for (int iDim = 0; iDim<this.getNDim(); iDim++) {
+        this.chainArray.set(this.nSample, iDim, x.get(iDim));
+      }
+      //increment the number of samples
+      this.nSample++;
+      
     }
+    
   }
   
   /**METHOD: ACCEPT STEP
-   * The chainArray is updated at this.nStep+1.
    * With probability acceptProb, the chain takes the value proposal, otherwise current
    * The random uniform numbers in random01Array are used
    * @param acceptProb Acceptance probability
-   * @param current Column vector containing the value of the chain now
-   * @param proposal Column vector of the proposal step
+   * @param current Column vector containing the value of the chain now, to be modified
+   * @param proposal Column vector of the proposal step, not modified
    */
   protected void acceptStep(double acceptProb, SimpleMatrix current, SimpleMatrix proposal) {
     //get a random number between 0 and 1
     //with acceptProb chance, accept the sample
-    SimpleMatrix acceptedStep = current;
     if (this.rng.nextDouble() < acceptProb){
-      acceptedStep = proposal;
+      current.set(proposal);
       //increment the number of acceptance steps
       this.nAccept++;
-    }
-    //save x to the chain array
-    for (int iDim = 0; iDim<this.getNDim(); iDim++) {
-      this.chainArray.set(this.nStep+1, iDim, acceptedStep.get(iDim));
     }
   }
   
@@ -138,25 +155,21 @@ public abstract class Mcmc {
     
   /**METHOD: UPDATE STATISTICS
    * Update the acceptanceArray, nStep, chainMean and chainCovariance
+   * @param x The new position column vector of the chain, after the MCMC step(s)
    */
-  protected void updateStatistics(){
+  protected void updateStatistics(SimpleMatrix x){
     
     //work out the acceptance rate at this stage
     //acceptance rate = (number of acceptance steps) / (number of steps)
     //the acceptance rate keeps track of the acceptance rate from and including the 1st step
     //(not from the initial value)
     //note that this.nStep has been incremented when metropolisHastingsStep was called
-    this.acceptanceArray[this.nStep] = ((double)(this.nAccept)) / ((double)(this.nStep+1));
+    this.acceptanceArray[this.nSample-1] = ((double)(this.nAccept)) / ((double)(this.nStep+1));
     
     //increment the number of steps taken
     this.nStep++;
     //n is the chain length, so it is the number of steps + 1 (from the initial value)
     double n = (double) (this.nStep+1);
-    
-    //instantiate vector of the current value of the chain
-    SimpleMatrix x = this.chainArray.extractVector(true, this.nStep);
-    //transpose it
-    CommonOps_DDRM.transpose(x.getDDRM());
     
     //update the mean using the previous mean
     CommonOps_DDRM.scale(n-1, this.chainMean.getDDRM());
@@ -368,6 +381,20 @@ public abstract class Mcmc {
     return this.target.getNDim();
   }
   
+  
+  /**METHOD: GET N THIN
+   * @return The thinning parameter
+   */
+  public int getNThin() {
+    return this.nThin;
+  }
+  
+  /**METHOD: SET N THIN
+   * @param nThin Thinning parameter to set
+   */
+  public void setNThin(int nThin) {
+    this.nThin = nThin;
+  }
   /**METHOD: GET ACCEPTANCE RATE
    * @return The estimate acceptance rate at each step
    */
@@ -394,7 +421,7 @@ public abstract class Mcmc {
    * @return double array, vector of the last postion of the chain
    */
   public double [] getEndOfChain() {
-    return this.chainArray.extractVector(true, this.nStep).getDDRM().getData();
+    return this.chainArray.extractVector(true, this.nSample-1).getDDRM().getData();
   }
   
   /**METHOD: GET CHAIN MEAN

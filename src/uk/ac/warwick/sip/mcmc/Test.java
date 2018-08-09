@@ -1,6 +1,7 @@
 package uk.ac.warwick.sip.mcmc;
 
 import org.apache.commons.math3.random.MersenneTwister;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
 public class Test {
@@ -38,11 +39,14 @@ public class Test {
     //instantiate the target distribution
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
     //instantiate the chain
-    HomogeneousRwmh chain = new HomogeneousRwmh(target, chainLength, proposalCovariance, rng);
+    Mcmc chain = new RandomWalkMetropolisHastings(target, chainLength, proposalCovariance, rng);
     
     //run the chain for nStep
     for (int i=0; i<nStep; i++) {
-      chain.step();
+      //instantiate column vector for the current value of the chain
+      SimpleMatrix x = chain.chainArray.extractVector(true, chain.nSample - 1);
+      CommonOps_DDRM.transpose(x.getDDRM());
+      chain.step(x);
     }
     
     //declare array for storing squared error

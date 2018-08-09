@@ -18,8 +18,10 @@ public class Global {
     SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(2.38, 2)/((double)nDim));
     SimpleMatrix massVector = new SimpleMatrix(nDim,1);
     massVector = massVector.plus(1.0);
+    int nLeapFrog = 100;
     double sizeLeapFrog = 0.5;
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
+    int nAdaptive = 100;
     
     int nChain = 1;
     Mcmc [] chainArray = new Mcmc [nChain];
@@ -27,8 +29,11 @@ public class Global {
     initialPositionScale = initialPositionScale.scale(5.0);
     
     for (int iChain=0; iChain<nChain; iChain++) {
-      chainArray[iChain] =  new HomogeneousRwmh(target, chainLength,
-          proposalCovariance, rng) ;
+      chainArray[iChain] =  new RandomWalkMetropolisHastings(target, chainLength, proposalCovariance, rng) ;
+      //chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massVector, sizeLeapFrog, nLeapFrog, rng) ;
+      //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massVector, sizeLeapFrog, rng) ;
+      //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massVector, nAdaptive, rng) ;
+      //chainArray[iChain].setNThin(50);
       SimpleMatrix initial = new SimpleMatrix(nDim, 1);
       for (int i=0; i<nDim; i++) {
         initial.set(i, rng.nextGaussian());
@@ -52,8 +57,6 @@ public class Global {
       frame.setVisible(true);
     }
     
-    chainArray[0].calculatePosteriorStatistics(100);
-    chainArray[0].posteriorExpectation.print();
     
   }
   
