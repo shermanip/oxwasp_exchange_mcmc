@@ -11,11 +11,11 @@ import org.math.plot.Plot2DPanel;
 public class Global {
   
   public static void main(String[] args) {
-    int nDim = 32;
-    int chainLength = 10000;
+    int nDim = 64;
+    int chainLength = 1000000;
     MersenneTwister rng = new MersenneTwister(-280845742);
     SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
-    SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(2.38, 2)/((double)nDim));
+    SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(0.001, 2)/((double)nDim));
     SimpleMatrix massVector = new SimpleMatrix(nDim,1);
     massVector = massVector.plus(1.0);
     int nLeapFrog = 100;
@@ -26,10 +26,10 @@ public class Global {
     int nChain = 1;
     Mcmc [] chainArray = new Mcmc [nChain];
     SimpleMatrix initialPositionScale = SimpleMatrix.identity(nDim);
-    initialPositionScale = initialPositionScale.scale(5.0);
+    initialPositionScale = initialPositionScale.scale(0.0);
     
     for (int iChain=0; iChain<nChain; iChain++) {
-      chainArray[iChain] =  new RandomWalkMetropolisHastings(target, chainLength, proposalCovariance, rng) ;
+      chainArray[iChain] =  new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng) ;
       //chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massVector, sizeLeapFrog, nLeapFrog, rng) ;
       //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massVector, sizeLeapFrog, rng) ;
       //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massVector, nAdaptive, rng) ;
@@ -55,6 +55,16 @@ public class Global {
       frame.setContentPane(tracePlot);
       frame.setSize(800, 600);
       frame.setVisible(true);
+      
+      Plot2DPanel acceptPlot = new Plot2DPanel();
+      double [] acceptArray = chainArray[iChain].getAcceptanceRate();
+      acceptPlot.addLinePlot("accept",acceptArray);
+      
+       // put the PlotPanel in a JFrame, as a JPanel
+      JFrame acceptFrame = new JFrame("a plot panel");
+      acceptFrame.setContentPane(acceptPlot);
+      acceptFrame.setSize(800, 600);
+      acceptFrame.setVisible(true);
     }
     
     

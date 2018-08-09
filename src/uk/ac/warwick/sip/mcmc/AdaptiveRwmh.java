@@ -77,6 +77,6 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     CommonOps_DDRM.addEquals(proposalCovariance.getDDRM(), diagElement.getDDRM());
     //do a Metropolis-Hastings step with this proposal covariance
     this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
-    super.metropolisHastingsStep(currentPosition);
+    this.metropolisHastingsStep(currentPosition);
   }
 }

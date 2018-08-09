@@ -115,15 +115,25 @@ public abstract class Mcmc {
       for (int iThin=0; iThin<this.nThin; iThin++) {
         this.step(x);
       }
-      //save x to the chain array
-      for (int iDim = 0; iDim<this.getNDim(); iDim++) {
-        this.chainArray.set(this.nSample, iDim, x.get(iDim));
-      }
-      //increment the number of samples
-      this.nSample++;
+      //save x to the chain array and increment the number of samples
+      this.setCurrentStep(x);
       
     }
     
+  }
+  
+  /**METHOD: SET CURRENT STEP
+   * Add sample to chainArray
+   * Increments nSample
+   * @param x Value of the chain to add
+   */
+  protected void setCurrentStep(SimpleMatrix x) {
+    //for each dimension, copy the value of x to chainArray
+    for (int iDim = 0; iDim<this.getNDim(); iDim++) {
+      this.chainArray.set(this.nSample, iDim, x.get(iDim));
+    }
+    //increment nSample
+    this.nSample++;
   }
   
   /**METHOD: ACCEPT STEP
