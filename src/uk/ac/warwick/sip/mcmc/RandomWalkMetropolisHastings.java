@@ -13,16 +13,21 @@ import org.ejml.simple.SimpleMatrix;
  */
 public class RandomWalkMetropolisHastings extends Mcmc{
   
+  //proposal covariance decomposed using cholesky
+  protected SimpleMatrix proposalCovarianceChol;
+  
   /**CONSTRUCTOR
    * Metropolis Hastings algorithm which targets a provided distribution using Gaussian random walk
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
+   * @param proposalCovariance proposal covariance use in homogeneous steps
    * @param rng Random number generator all the random numbers
    */
   public RandomWalkMetropolisHastings(TargetDistribution target, int chainLength,
-      MersenneTwister rng){
+      SimpleMatrix proposalCovariance, MersenneTwister rng){
     //assign member variables
     super(target, chainLength, rng);
+    this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
   }
   
   /**CONSTRUCTOR
@@ -34,52 +39,29 @@ public class RandomWalkMetropolisHastings extends Mcmc{
   public RandomWalkMetropolisHastings(RandomWalkMetropolisHastings chain, int nMoreSteps){
     //do a shallow copy of chain
     super(chain, nMoreSteps);
+    //shallow copy the proposalCovarianceChol
+    this.proposalCovarianceChol = chain.proposalCovarianceChol;
   }
+  
   
   /**IMPLEMENTED: STEP
-   * This chain does a Metropolis-Hastings step
-   * Instances created using RandomWalkMetropolisHastings will throw an exception because a
-   * proposal covariance needs to be provided at every step
-   * Subclasses should override this if a proposal covariance isn't required at every step
+   * This chains takes a Metropolis-Hastings step and updates it member variables
+   * @param currentStep Column vector of the current step of the MCMC, to be modified
    */
   @Override
-  public void step() {
-    throw new RuntimeException("RandomWalkMetropolisHastings requires a proposal covariance in"
-        + " the method step()");
-  }
-  
-  /**METHOD: STEP
-   * This chains takes a Metropolis-Hastings step and updates it member variables-
-   * @param proposalCovarianceChol lower cholesky decomposition of the proposal_covariance
-   */
-  public void step(SimpleMatrix proposalCovarianceChol){
-    this.metropolisHastingsStep(proposalCovarianceChol);
-    this.updateStatistics();
-  }
-  
-  /**IMPLEMENTED: RUN
-   * Throws exception
-   * Subclasses should override this if required
-   * Overridden methods will use this to run the entire chain
-   */
-  @Override
-  public void run() {
-    throw new RuntimeException("RandomWalkMetropolisHastings cannot use the method run()"
-        + " because a proposal covariance is required for every step");
+  public void step(SimpleMatrix currentPosition){
+    this.metropolisHastingsStep(currentPosition);
+    this.updateStatistics(currentPosition);
   }
   
   /**METHOD: METROPOLIS HASTINGS STEP
    * Does a Metropolis-Hastings step
-   * Saves the new value to the chain array given a proposal covariance
+   * Modifies x, given a proposal covariance
    * It does not increment nStep when this method is called
    * The method updateStatistics will increment nStep
-   * @param proposalCovarianceChol lower cholesky decomposition of the proposal_covariance
+   * @param x current position of the chain, to be modified
    */
-  protected void metropolisHastingsStep(SimpleMatrix proposalCovarianceChol){
-    
-    //instantiate column vector for the current value of the chain
-    SimpleMatrix x = this.chainArray.extractVector(true, this.nStep);
-    CommonOps_DDRM.transpose(x.getDDRM());
+  protected void metropolisHastingsStep(SimpleMatrix x){
     
     //instantiate vector of N(0,1) using rng
     SimpleMatrix z = new SimpleMatrix(this.getNDim(), 1);
@@ -88,13 +70,13 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     }
     
     //transform z using proposalCovarianceChol and x, assign it to y, y is a proposal
-    SimpleMatrix y = proposalCovarianceChol.mult(z);
+    SimpleMatrix y = this.proposalCovarianceChol.mult(z);
     CommonOps_DDRM.addEquals(y.getDDRM(), x.getDDRM());
     
     //declare variable for the acceptance probability, work it out using the ratio of target pdf
     //if it larger than one, then an acceptance step will always be taken
     double acceptProb = (this.target.getPdf(y)) / (this.target.getPdf(x));
-    this.acceptStep(acceptProb, x, y);
+    this.acceptStep(acceptProb, x, y); //x can be modified here
   }
   
 }

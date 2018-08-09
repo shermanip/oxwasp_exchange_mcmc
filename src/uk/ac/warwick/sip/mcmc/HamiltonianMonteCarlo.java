@@ -59,27 +59,17 @@ public class HamiltonianMonteCarlo extends Mcmc {
     this.nLeapFrog = chain.nLeapFrog;
   }
   
-  /**OVERRIDE: RUN
-   * Take multiple HMC steps to complete the MCMC
-   */
-  @Override
-  public void run() {
-    while (this.nStep < (this.chainLength-1)) {
-      this.step();
-    }
-  }
-  
   /**OVERRIDE: STEP
    * Does a HMC step. The position vector is the current position of the chain.
    * Momentum is generated randomly using Gaussian.
    * Leap frog steps are used to move the particle obeying Hamiltonian dynamics
    * The resulting position vector after leap frog steps is the proposal
    * The proposal is then accepted or rejected using the canonical distribution
+   * @param position Column vector of the current step of the MCMC, to be modified
    */
   @Override
-  public void step() {
+  public void step(SimpleMatrix position) {
     //get the position vector from the chain array, and random momentum
-    SimpleMatrix position = this.getPosition();
     SimpleMatrix momentum = this.getMomentum();
     
     //instantiate SimpleMatrices for the proposal variables
@@ -99,17 +89,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     this.acceptStep(acceptProb, position, positionProposal);
     
     //update the statistics of itself
-    this.updateStatistics();
-  }
-  
-  /**METHOD: GET POSITION
-   * Return the position vector from the chain array, the chain current position
-   * @return Column vector, the chain current position
-   */
-  protected SimpleMatrix getPosition() {
-    SimpleMatrix position = this.chainArray.extractVector(true, this.nStep);
-    CommonOps_DDRM.transpose(position.getDDRM());
-    return position;
+    this.updateStatistics(position);
   }
   
   /**METHOD: GET MOMENTUM

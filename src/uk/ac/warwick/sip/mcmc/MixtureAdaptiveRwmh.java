@@ -12,7 +12,8 @@ import org.ejml.simple.SimpleMatrix;
  */
 public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
   
-  protected double probabilitySaftey = 0.05; //probability of using homogeneous proposal step
+  protected SimpleMatrix safteyProposalCovarianceChol; //proposal covariance of the saftey step
+  protected double probabilitySaftey = 0.05; //probability of using the step
   
   /**CONSTRUCTOR
    * See superclass AdaptiveRwmh
@@ -21,9 +22,10 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
    * @param proposalCovariance proposal covariance use in homogeneous steps
    * @param rng See superclass RandomWalkMetropolisHastings
    */
-  public MixtureAdaptiveRwmh(TargetDistribution target, int chainLength, SimpleMatrix proposalCovariance,
-      MersenneTwister rng){
+  public MixtureAdaptiveRwmh(TargetDistribution target, int chainLength,
+      SimpleMatrix proposalCovariance, MersenneTwister rng){
     super(target, chainLength, proposalCovariance, rng);
+    this.safteyProposalCovarianceChol = new SimpleMatrix(this.proposalCovarianceChol);
   }
   
   /**CONSTRUCTOR
@@ -37,36 +39,35 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
     super(chain, nMoreSteps);
   //shallow copy member variables
     this.probabilitySaftey = chain.probabilitySaftey;
+    this.safteyProposalCovarianceChol = chain.safteyProposalCovarianceChol;
   }
   
   /**OVERRIDE: ADAPTIVE STEP
    * Do a Metropolis-Hastings step but with adaptive proposal covariance
    * this.probabilitySaftey chance the proposal covarinace is the homogeneous one
    * Otherwise the proposal covariance is a scaled chain sample covariance
+   * @param currentStep Column vector of the current step of the MCMC, to be modified
    */
   @Override
-  public void adaptiveStep() {
+  public void adaptiveStep(SimpleMatrix currentStep) {
     
-    //declare pointer for the proposalCovarinace cholesky decomposed
-    SimpleMatrix proposalCovarianceChol;
-    
-    //with this.probabilitySaftey chance, use the homogenous proposal covariance
+    //with this.probabilitySaftey chance, use the saftey proposal covariance
     if (this.rng.nextDouble()< this.probabilitySaftey) {
-      proposalCovarianceChol = this.proposalCovarianceChol;
+      this.proposalCovarianceChol = this.safteyProposalCovarianceChol;
     } else {
       //get the chain covariance and scale it so that it is optimial for targetting Normal
-      SimpleMatrix proposalCovariance = new SimpleMatrix(this.chainCovariance);
-      CommonOps_DDRM.scale(Math.pow(2.38, 2)/this.getNDim(), proposalCovariance.getDDRM());
+      this.proposalCovarianceChol = new SimpleMatrix(this.chainCovariance);
+      CommonOps_DDRM.scale(Math.pow(2.38, 2)/this.getNDim(), this.proposalCovarianceChol.getDDRM());
       //Global.cholesky will return a null if the decomposition is unsuccessful
       //use the default proposal if a null is caught
-      proposalCovarianceChol = Global.cholesky(proposalCovariance);
-      if (proposalCovarianceChol == null) {
-        proposalCovarianceChol = this.proposalCovarianceChol;
+      this.proposalCovarianceChol = Global.cholesky(this.proposalCovarianceChol);
+      if (this.proposalCovarianceChol == null) {
+        this.proposalCovarianceChol = this.safteyProposalCovarianceChol;
       }
     }
     
     //do a Metropolis-Hastings step with this proposal covariance
-    this.step(proposalCovarianceChol);
+    this.metropolisHastingsStep(currentStep);
   }
   
 }

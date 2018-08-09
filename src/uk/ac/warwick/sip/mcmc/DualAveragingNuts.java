@@ -1,6 +1,7 @@
 package uk.ac.warwick.sip.mcmc;
 
 import org.apache.commons.math3.random.MersenneTwister;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
 /**CLASS: DUAL AVERAGING NO U TURN SAMPLER
@@ -69,12 +70,24 @@ public class DualAveragingNuts extends NoUTurnSampler {
     this.currentHamiltonian = chain.currentHamiltonian;
   }
   
+  /**OVERRIDE: SET INITIAL VALUE
+   * Set the initial value of the chain, then set the initial sizeLeapFrog
+   * @param initialValue double [] containing the values of the initial position
+   */
+  @Override
+  public void setInitialValue(double [] initialValue) {
+    super.setInitialValue(initialValue);
+    this.setInitialStepSize();
+  }
+  
   /**METHOD: SET INITIAL STEP SIZE
    * Called FindReasonableEpsilon in the reference
    * Set the member variable this.sizeLeapFrog during construction
+   * @param position Column vector of the current step of the MCMC, to be modified
    */
   protected void setInitialStepSize() {
-    SimpleMatrix position = this.getPosition();
+    SimpleMatrix position = this.chainArray.extractVector(true, this.nSample - 1);
+    CommonOps_DDRM.transpose(position.getDDRM());
     SimpleMatrix momentum = this.getMomentum();
     double acceptProb;
     double canonicalCurrent;

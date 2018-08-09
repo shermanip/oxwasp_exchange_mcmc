@@ -55,12 +55,12 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
    * The position vector is the current position of the chain.
    * Momentum is generated randomly using Gaussian.
    * Leap frogs are done until the particle does a U turn
+   * @param position Column vector of the current step of the MCMC, to be modified
    */
   @Override
-  public void step() {
+  public void step(SimpleMatrix position) {
     
     //get the position vector from the chain array, and random momentum
-    SimpleMatrix position = this.getPosition();
     SimpleMatrix momentum = this.getMomentum();
     
     //sample the slice variable
@@ -113,13 +113,12 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     if (hasAccept) {
       this.nAccept++;
     }
-    //save the proposed position to the chain array
-    for (int iDim = 0; iDim<this.getNDim(); iDim++) {
-      this.chainArray.set(this.nStep+1, iDim, tree.positionProposal.get(iDim));
-    }
+    
+    //point the current position to the new position
+    position.set(tree.positionProposal);
     
     //update the statistics of itself
-    this.updateStatistics();
+    this.updateStatistics(position);
     
     //call the method adaptiveStep, in this class it does nothing
     this.adaptiveStep(tree);
