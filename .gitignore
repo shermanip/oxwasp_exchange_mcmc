@@ -1,0 +1,9 @@
+/bin/
+/target/
+/.gradle/
+.classpath
+.project
+/.settings/
+/jar/
+*.jar
+*.tar.gz
