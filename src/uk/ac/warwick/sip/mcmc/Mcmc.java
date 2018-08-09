@@ -23,6 +23,14 @@ public abstract class Mcmc {
   protected SimpleMatrix chainArray;
   protected SimpleMatrix chainMean; //the mean of the chain at the current step (column vector)
   protected SimpleMatrix chainCovariance; //covariance of the chain at the current step
+  
+    //the mean of the chain (for each dimension) after burn in
+  protected SimpleMatrix posteriorExpectation;
+  //monte carlo error of the mean, after burn in
+  protected SimpleMatrix monteCarloError;
+  //covariance of the chain, after burn in
+  protected SimpleMatrix posteriorCovariance;
+  
   //array of acceptance rate at each step
   protected double [] acceptanceArray;
   
@@ -35,12 +43,7 @@ public abstract class Mcmc {
   //temporary member variables, statistics based on the chain and burn in
   //these member variables will be instantised when the method calculateChainStatistics is called
   
-  //the mean of the chain (for each dimension) after burn in
-  protected SimpleMatrix posteriorExpectation;
-  //monte carlo error of the mean, after burn in
-  protected SimpleMatrix monteCarloError;
-  //covariance of the chain, after burn in
-  protected SimpleMatrix posteriorCovariance;
+
   
   /**CONSTRUCTOR
    * @param target Object which has a method to call the pdf
