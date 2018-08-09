@@ -7,3 +7,12 @@
 /jar/
 *.jar
 *.tar.gz
+
+/.svn/
+/H:*/
+*.log
+*.xml
+/src/accessors/
+/src/jet/apps/equi2d/
+/src/oliford/
+/src/seed/
