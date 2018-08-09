@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.apache.commons.math3.random.MersenneTwister;
+import org.ejml.simple.SimpleMatrix;
+
 import accessors.jet.equi2d.JetEqui2DModel4;
 import algorithmrepository.Algorithms;
 import algorithmrepository.DynamicDoubleArray;
@@ -46,6 +49,12 @@ import seed.minerva.diagnostics.magnetics.JETMagneticDiagnosticsDataSource;
 import seed.minerva.diagnostics.magnetics.PickupCoils2DDataSourceJET2;
 import seed.minerva.util.GraphUtil;
 import seed.minerva.util.ReportingUtil;
+import uk.ac.warwick.sip.mcmc.GraphDistribution;
+import uk.ac.warwick.sip.mcmc.HomogeneousRwmh;
+import uk.ac.warwick.sip.mcmc.Mcmc;
+import uk.ac.warwick.sip.mcmc.MixtureAdaptiveRwmh;
+import uk.ac.warwick.sip.mcmc.RandomWalkMetropolisHastings;
+import uk.ac.warwick.sip.mcmc.TargetDistribution;
 
 public class RunVoEqui {
 	
@@ -53,122 +62,6 @@ public class RunVoEqui {
 	static double ppUnit = UnitManager.get("pPrime");
 	static double pressureUnit = UnitManager.get("Pressure");	
 	static final double currentUnit = UnitManager.get("Current");
-		
-	public static void main(String[] args) throws Exception {
-		//tryEquiSampling2();		
-	}
-	
-	/*
-	public static void tryEquiSampling2() throws Exception {
-		String folder = "C:\\results\\JetEqui2DModel3\\testo1\\92274\\50.000\\20171016T1507\\initProfiles\\";
-		String xml = OneLiners.fileToText(folder+"/model-current.xml");
-		JetEqui2DModel3 m = new JetEqui2DModel3();
-		AccessorCompiler.populateAccessorFromXML(m, xml);
-		
-		double scaling = 1e-2;
-		double ffStep = scaling*0.1;
-		double neStep = scaling*0.01;
-		double teStep = scaling*0.01;
-		double piStep = scaling*0.01;
-		
-	
-					
-			double logPdfInit = m.graph.logPdf();					
-		for(int i=0;i<1000;++i) {
-			double[] sample = m.equi.ffprime.
-			m.equi.ffprime.values.setEnabledValue(add(m.equi.ffprime.values.getEnabledValue(), mvnFfprime.getEnabledValue()));			
-			m.equi.ne.values.setEnabledValue(add(m.equi.ne.values.getEnabledValue(), mvnNe.getEnabledValue()));
-			m.equi.te.values.setEnabledValue(add(m.equi.te.values.getEnabledValue(), mvnTe.getEnabledValue()));
-			m.equi.pion.values.setEnabledValue(add(m.equi.pion.values.getEnabledValue(), mvnPi.getEnabledValue()));
-								
-			double logPdf = m.graph.logPdf();
-			if (logPdf > logPdfInit) {
-				System.out.println("Yes: "+logPdfInit+" -> "+logPdf);
-			}
-			
-		}
-	 		
-	}
-	*/
-	
-	
-	public static void tryEquiSampling1() throws Exception {
-		/*
-		String folder = "C:\\results\\JetEqui2DModel3\\testo1\\92274\\50.000\\20171016T1507\\initProfiles\\";
-		String xml = OneLiners.fileToText(folder+"/model-current.xml");
-		JetEqui2DModel3 m = new JetEqui2DModel3();
-		AccessorCompiler.populateAccessorFromXML(m, xml);
-		
-		double scaling = 1e-2;
-		double ffStep = scaling*0.1;
-		double neStep = scaling*0.01;
-		double teStep = scaling*0.01;
-		double piStep = scaling*0.01;
-		
-		GraphicalModel g = new GraphicalModel();
-		TruncatedMultivariateNormal mvnFfprime = new TruncatedMultivariateNormal(g, "mvnFfprime", fillArray(0.0, m.equi.ffprime.values.dim()), fillArray(ffStep*ffStep, m.equi.ffprime.values.dim()), fillArray(0.0, m.equi.ffprime.values.dim()), null, null, ProbabilityNode.FREE);
-		TruncatedMultivariateNormal mvnNe = new TruncatedMultivariateNormal(g, "mvnNe", fillArray(0.0, m.equi.ne.values.dim()), fillArray(neStep*neStep, m.equi.ne.values.dim()), fillArray(0.0, m.equi.ne.values.dim()), null, null, ProbabilityNode.FREE);
-		TruncatedMultivariateNormal mvnTe = new TruncatedMultivariateNormal(g, "mvnTe", fillArray(0.0, m.equi.te.values.dim()), fillArray(teStep*teStep, m.equi.te.values.dim()),  fillArray(0.0, m.equi.te.values.dim()), null,null, ProbabilityNode.FREE);
-		TruncatedMultivariateNormal mvnPi = new TruncatedMultivariateNormal(g, "mvnPi", fillArray(0.0, m.equi.pion.values.dim()), fillArray(piStep*piStep, m.equi.pion.values.dim()), fillArray(0.0, m.equi.pion.values.dim()), null, null, ProbabilityNode.FREE);
-	
-		GraphUtil.disableAll(m.graph);
-		m.currents.jtor.plasmaBeamCurrentDensities.setActive(true);
-		m.currents.jtor.boundaryBeamsConstraint.setActive(true);
-		m.currents.iron.ironCurrents.setActive(true);
-		m.diagnostics.magnetics.pickups_obs.setActive(true);
-		m.diagnostics.magnetics.fluxloops_obs.setActive(true);
-		m.diagnostics.magnetics.saddles_obs.setActive(true);
-		m.diagnostics.kg1.kg1_obs.setActive(true);
-		m.diagnostics.hrts.obs_ne.setActive(true);
-		m.diagnostics.hrts.obs_te.setActive(true);
-		m.diagnostics.polarimetry.polarimetry_dpsi_obs.setActive(false);
-		m.diagnostics.polarimetry.polarimetry_chi_obs.setActive(false);
-		m.diagnostics.libeam.obs.setActive(false);
-		m.equi.equiConstraint.setActive(true);
-		m.equi.pion.values.setActive(true);		
-		m.equi.ffprime.values.setActive(true);
-		m.equi.ne.values.setActive(true);
-		m.equi.te.values.setActive(true);
-		m.equi.pion.pion_edge_vobs.setActive(true);
-		m.equi.ne.ne_edge_vobs.setActive(true);
-		m.equi.te.te_edge_vobs.setActive(true);
-		m.diagnostics.hrts.calib.setActive(true);
-		m.diagnostics.hrts.shiftAlongLos.setActive(true);
-
-			m.equi.ne.l1.setActive(false);
-			m.equi.ne.l2.setActive(false);
-			m.equi.ne.x0.setActive(false);
-			m.equi.ne.xw.setActive(false);
-			m.equi.ne.sigmaf.setActive(false);
-
-			m.equi.te.l1.setActive(false);
-			m.equi.te.l2.setActive(false);
-			m.equi.te.x0.setActive(false);
-			m.equi.te.xw.setActive(false);
-			m.equi.te.sigmaf.setActive(false);
-
-			m.equi.pion.l1.setActive(false);
-			m.equi.pion.l2.setActive(false);
-			m.equi.pion.x0.setActive(false);
-			m.equi.pion.xw.setActive(false);
-			m.equi.pion.sigmaf.setActive(false);
-					
-			double logPdfInit = m.graph.logPdf();					
-		for(int i=0;i<1000;++i) {
-			g.sampleAndSet();
-			m.equi.ffprime.values.setEnabledValue(add(m.equi.ffprime.values.getEnabledValue(), mvnFfprime.getEnabledValue()));			
-			m.equi.ne.values.setEnabledValue(add(m.equi.ne.values.getEnabledValue(), mvnNe.getEnabledValue()));
-			m.equi.te.values.setEnabledValue(add(m.equi.te.values.getEnabledValue(), mvnTe.getEnabledValue()));
-			m.equi.pion.values.setEnabledValue(add(m.equi.pion.values.getEnabledValue(), mvnPi.getEnabledValue()));
-								
-			double logPdf = m.graph.logPdf();
-			if (logPdf > logPdfInit) {
-				System.out.println("Yes: "+logPdfInit+" -> "+logPdf);
-			}
-			
-		}
-*/	 		
-	}
 	
 	public static double[] sampleTruncatedDiagMvn(double sigma, int dim) {
 		double[] ret = new double[dim];
@@ -311,62 +204,6 @@ public class RunVoEqui {
 			dump("ffprime sigmaf="+Double.toString(m.equi.ffprime.sigmaf.getValue()));
 			results.dumpResults(outputFolder+"initProfiles",false);
 			
-
-//	        m.currents.iron.ironCurrentsVar.setValue(1e8);
-
-			m.equi.ffprime.l1.setValue(0.5);
-			m.equi.ffprime.l2.setValue(0.02);
-			m.equi.pprime.l1.setValue(0.5);
-			m.equi.pprime.l2.setValue(0.02);
-			m.equi.pprime.sigmaf.setValue(1e3);
-			m.equi.ffprime.sigmaf.setValue(1e3);
-			linv = new LinearGaussianInversion(m.graph);
-			linv.refine();
-			dump("ffprime sigmaf="+Double.toString(m.equi.ffprime.sigmaf.getValue()));
-			results.dumpResults(outputFolder+"initProfiles_l1=0.5_l2=0.02_sig=1e3",false);
-			
-			m.equi.ffprime.l1.setValue(0.05);
-			m.equi.ffprime.l2.setValue(0.002);
-			m.equi.pprime.l1.setValue(0.05);
-			m.equi.pprime.l2.setValue(0.002);
-			m.equi.ffprime.sigmaf.setValue(1e3);
-			m.equi.pprime.sigmaf.setValue(1e3);
-			linv = new LinearGaussianInversion(m.graph);
-			linv.refine();
-			dump("ffprime sigmaf="+Double.toString(m.equi.ffprime.sigmaf.getValue()));
-			results.dumpResults(outputFolder+"initProfiles_0.05_0.002_sig=1e3",false);
-
-			m.equi.ffprime.l1.setValue(0.5);
-			m.equi.ffprime.l2.setValue(0.02);
-			m.equi.pprime.l1.setValue(0.5);
-			m.equi.pprime.l2.setValue(0.02);
-			m.equi.pprime.sigmaf.setValue(1e0);
-			m.equi.ffprime.sigmaf.setValue(1e0);
-			linv = new LinearGaussianInversion(m.graph);
-			linv.refine();
-			dump("ffprime sigmaf="+Double.toString(m.equi.ffprime.sigmaf.getValue()));
-			results.dumpResults(outputFolder+"initProfiles_l1=0.5_l2=0.02_sig=1e0",false);
-			
-			m.equi.ffprime.l1.setValue(0.05);
-			m.equi.ffprime.l2.setValue(0.002);
-			m.equi.pprime.l1.setValue(0.05);
-			m.equi.pprime.l2.setValue(0.002);
-			m.equi.ffprime.sigmaf.setValue(1e0);
-			m.equi.pprime.sigmaf.setValue(1e0);
-			linv = new LinearGaussianInversion(m.graph);
-			linv.refine();
-			dump("ffprime sigmaf="+Double.toString(m.equi.ffprime.sigmaf.getValue()));
-			results.dumpResults(outputFolder+"initProfiles_0.05_0.002_sig=1e0",false);
-
-			// set back to the original values
-			m.equi.ffprime.l1.setValue(0.5);
-			m.equi.ffprime.l2.setValue(0.02);
-			m.equi.pprime.l1.setValue(0.5);
-			m.equi.pprime.l2.setValue(0.02);
-			m.equi.pprime.sigmaf.setValue(1e2);
-			m.equi.ffprime.sigmaf.setValue(1e2);
-			
-
 			//need to disconnect GP and connect a diagonal at this point	
 			if (run.useEquiConstaint) {
 				int numPlasmaBeams = m.currents.jtor.plasmaBeamCurrentDensities.mean().length;       
@@ -437,19 +274,63 @@ public class RunVoEqui {
 		}
 		if(run.mcmc) {
 			dump("Now starting MCMC");
-			int numBurnIn = 0;
-			MCMCInversion inv = new MCMCInversion(m.graph);
-			inv.refine(numBurnIn);
-//			int sampleCount=1000000;
-			int sampleCount=1000000;
-			DynamicDoubleArray beamSamples = new DynamicDoubleArray();
-			tic();
-			for (long j = 0; j < sampleCount; j++) {
-				inv.refine();
-				if(j % 100 == 0) beamSamples.add(m.currents.magneticModel.getTotalPlasmaCurrent()/1000.);  // convert from kA to MA
-				if(j % 1000 == 0) plotMcmc(j,outputFolder,toc(),beamSamples.getTrimmedArray());
+			
+			int sampleCount=2000;
+			int nChain = 16;
+			int window = 100;
+			
+			//instantiate objects to be pass onto the mcmc object
+			TargetDistribution target = new GraphDistribution(m.graph); //contains the pdf
+			MersenneTwister rng = new MersenneTwister(-280845742); //random number generator
+			//set the proposal covariance, in adaptive methods this is the inital proposal
+			SimpleMatrix proposalCovariance = SimpleMatrix.identity(target.getNDim())
+					.scale(0.1/((double)target.getNDim()));
+			
+			//instantiate the chain and set the initial values
+			Mcmc chain = new MixtureAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
+			
+			chain.setInitialValue(m.graph.getFreeParameters());
+			chain.run();
+			
+			JyPlot tracePlot = new JyPlot();
+			tracePlot.figure();
+			
+			double [] currentValuesI;
+			double [][] currentValues = new double[7][sampleCount];
+			
+			
+			double [] chainArray = chain.getChain();
+			double [] chainPosition = new double[chain.getNDim()];
+			for (int iSample = 0; iSample < sampleCount; iSample++) {
+				
+				for (int iDim=0; iDim<chain.getNDim(); iDim++) {
+					chainPosition[iDim] = chainArray[iDim + chain.getNDim()*iSample];
+				}
+				
+				m.graph.setFreeParameters(chainPosition);
+				// convert from kA to MA
+				currentValuesI = m.currents.jtor.plasmaBeamCurrentDensities.getFullValue();
+				
+				for (int i=0; i<currentValuesI.length; i++) {
+					currentValues[i][iSample] = currentValuesI[i]/1000.0;
+				}
+				
 			}
-			plotMcmc(sampleCount,outputFolder,toc(),beamSamples.getTrimmedArray());
+			for (int i=0; i<currentValues.length; i++) {
+				tracePlot.subplot(7,1,i+1);
+				tracePlot.plot(currentValues[i]);
+			}
+			
+			
+			tracePlot.show();
+			tracePlot.exec();
+			
+			JyPlot acceptancePlot = new JyPlot();
+			acceptancePlot.figure();
+			acceptancePlot.plot(chain.getAcceptanceRate());
+			
+			acceptancePlot.show();
+			acceptancePlot.exec();
 		}
 	}
 	private static void plotMcmc(long sampleCount,String outputFolder,long timeValLong,double[] sampleVec) {
@@ -1456,7 +1337,7 @@ public class RunVoEqui {
 				double Z1 = coilsZ[j] - coilsdZ[j]/2.0;
 				double Z2 = coilsZ[j] + coilsdZ[j]/2.0;
 				p.plot(new double[] {  R1, R2, R2, R1, R1}, new double[] { Z1, Z1, Z2, Z2, Z1  }, "k", "linewidth=0.01");
-				p.write("c=m("+scaledValues[j]+")");						
+				p.write("c=m("+scaledValues[j]+")");
 				p.fill_between(new double[] { R1, R2 }, Z1, Z2, "color=c", "alpha=0.6");
 			}											
 			
