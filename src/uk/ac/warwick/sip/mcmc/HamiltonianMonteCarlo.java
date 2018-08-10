@@ -58,6 +58,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     //also shallow copy the chain's member variables
     super(chain, nMoreSteps);
     this.massChol = chain.massChol;
+    this.massInverse = chain.massInverse;
     this.sizeLeapFrog = chain.sizeLeapFrog; 
     this.nLeapFrog = chain.nLeapFrog;
   }

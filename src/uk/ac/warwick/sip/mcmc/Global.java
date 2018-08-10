@@ -3,6 +3,7 @@ package uk.ac.warwick.sip.mcmc;
 import javax.swing.JFrame;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.interfaces.decomposition.CholeskyDecomposition_F64;
 import org.ejml.simple.SimpleMatrix;
@@ -77,6 +78,9 @@ public class Global {
    */
   public static SimpleMatrix cholesky(SimpleMatrix x) {
     x = new SimpleMatrix(x);
+    if (!MatrixFeatures_DDRM.isSymmetric(x.getDDRM())) {
+      return null;
+    }
     CholeskyDecomposition_F64<DMatrixRMaj> chol = DecompositionFactory_DDRM.chol(x.numRows(),true);
     if( !chol.decompose(x.getMatrix())) {
       return null;

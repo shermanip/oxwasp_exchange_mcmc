@@ -10,9 +10,17 @@ public class Test {
     testChain(10, 1000, 3, 1262924406, "Test 1.1");
     testChain(10, 1000, 100, 1262924406, "Test 1.2");
     testChain(10, 1000, 999, 1262924406, "Test 1.3");
-    testChain(100, 1000, 999, -178151448, "Test 1.4");
-    checkCholesky(20, 409534955, "Test 2");
-    checkAcceptStep(10, 100, 990390580, "Test 3");
+    //testChain(100, 1000, 999, -178151448, "Test 1.4");
+    testCholesky(20, 409534955, "Test 2");
+    testAcceptStep(10, 100, 990390580, "Test 3");
+    testCopyExtendConstructor(32, 100, 20, 355497382, "Test 4.1");
+    testCopyExtendConstructor(32, 1000, 20, 355497382, "Test 4.2");
+    testCopyExtendConstructor(32, 1000, 100, 355497382, "Test 4.3");
+    testCopyExtendConstructor(64, 1000, 500, 355497382, "Test 4.4");
+    testThin(32, 100, 5, 438709310, "Test 5.1");
+    testThin(32, 100, 10, 438709310, "Test 5.2");
+    testThin(32, 1000, 10, 438709310, "Test 5.3");
+    testThin(32, 1000, 50, 438709310, "Test 5.4");
   }
   
   /**FUNCTION: GET CHAIN
@@ -32,8 +40,7 @@ public class Test {
     SimpleMatrix proposalCovariance = targetCovariance.scale( Math.pow(2.38,2) / ((double)nDim) );
     
     //hmc parameters
-    SimpleMatrix massVector = new SimpleMatrix(nDim,1);
-    massVector = massVector.plus(1.0);
+    SimpleMatrix massMatrix = SimpleMatrix.identity(nDim);
     int nLeapFrog = 20;
     double sizeLeapFrog = 0.5;
     int nAdaptive = 100;
@@ -51,14 +58,48 @@ public class Test {
         chain = new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng);
         break;
       case 3:
-        chain = new HamiltonianMonteCarlo(target, chainLength, massVector, sizeLeapFrog,
+        chain = new HamiltonianMonteCarlo(target, chainLength, massMatrix, sizeLeapFrog,
             nLeapFrog, rng);
         break;
       case 4:
-        chain = new NoUTurnSampler(target, chainLength, massVector, sizeLeapFrog, rng);
+        chain = new NoUTurnSampler(target, chainLength, massMatrix, sizeLeapFrog, rng);
         break;
       case 5:
-        chain = new DualAveragingNuts(target, chainLength, massVector, nAdaptive, rng);
+        chain = new DualAveragingNuts(target, chainLength, massMatrix, nAdaptive, rng);
+        break;
+      default:
+        break;
+    }
+    return chain;
+  }
+  
+  /**FUNCTION: COPY CONSTRUCTOR
+   * Calls the chain's copy and extend constructor
+   * @param iChain Pointer to the class of the object
+   * @param chain The chain to call the copy and extend constructor
+   * @param nMoreSteps Number of steps to extend
+   * @return The chain copied and extended
+   */
+  static Mcmc copyConstructor(int iChain, Mcmc chain, int nMoreSteps) {
+    //call the copy and extend constructor
+    switch (iChain) {
+      case 0:
+        chain = new RandomWalkMetropolisHastings((RandomWalkMetropolisHastings)chain, nMoreSteps);
+        break;
+      case 1:
+        chain = new AdaptiveRwmh((AdaptiveRwmh)chain, nMoreSteps);
+        break;
+      case 2:
+        chain = new MixtureAdaptiveRwmh((MixtureAdaptiveRwmh)chain, nMoreSteps);
+        break;
+      case 3:
+        chain = new HamiltonianMonteCarlo((HamiltonianMonteCarlo)chain, nMoreSteps);
+        break;
+      case 4:
+        chain = new NoUTurnSampler((NoUTurnSampler)chain, nMoreSteps);
+        break;
+      case 5:
+        chain = new DualAveragingNuts((DualAveragingNuts)chain, nMoreSteps);
         break;
       default:
         break;
@@ -218,7 +259,7 @@ public class Test {
     return sampleCovariance.divide((double)(n - 1));
   }
   
-  /**FUNCTION: CHECK CHOLESKY
+  /**FUNCTION: TEST CHOLESKY
    * Check if Global.cholesky() does not modify the parameter
    * Check if Global.cholesky() returns null
    * Check if 
@@ -227,35 +268,47 @@ public class Test {
    * @param name Name of the test
    * @return true if pass the test
    */
-  static void checkCholesky(int nDim, int seed, String name) {
+  static void testCholesky(int nDim, int seed, String name) {
     System.out.println("==========");
     System.out.println(name);
     int nTest = 10; // number of tests
     MersenneTwister rng = new MersenneTwister(seed);
-    boolean isNullPass = true;
-    boolean isNotModifiyPass = true;
+    boolean isNoNull = true;
+    boolean isNull = true;
+    boolean isNotModify = true;
     //for n tests
-    for (int i=0; i<nTest; i++) {
+    for (int iTest=0; iTest<nTest; iTest++) {
       //get a random covariance and clone it
       SimpleMatrix cov = Global.getRandomCovariance(nDim, rng);
       SimpleMatrix covClone = new SimpleMatrix(cov);
       SimpleMatrix chol = Global.cholesky(cov); //do cholesky decomposition
       //check if chol is null
       if (chol==null) {
-        isNullPass = false;
+        isNoNull = false;
       }
       //check if the difference of cov before and after chol is 0
       double sumDiffSquared = cov.minus(covClone).elementPower(2).elementSum();
       if (sumDiffSquared!=0) {
-        isNotModifiyPass = false;
+        isNotModify = false;
       };
       //test is L*LT is similar
       SimpleMatrix cholCholT = chol.mult(chol.transpose());
       sumDiffSquared = cholCholT.minus(cov).elementPower(2).elementSum();
       System.out.println("Squared error in Cholesky decomposition = "+sumDiffSquared);
+      
+      //check if cholesky of chol of N(0,1) outputs null
+      SimpleMatrix randGaussian = new SimpleMatrix(nDim, nDim);
+      for (int i=0; i<randGaussian.getNumElements(); i++) {
+        randGaussian.set(i, rng.nextGaussian());
+      }
+      chol = Global.cholesky(randGaussian); //do cholesky decomposition
+      if (chol!=null) {
+        isNull = false;
+      }
     }
-    System.out.println("pass null test = "+isNullPass);
-    System.out.println("pass modify test = "+isNotModifiyPass);
+    System.out.println("pass no null test = "+isNoNull);
+    System.out.println("pass null test = "+isNull);
+    System.out.println("pass modify test = "+isNotModify);
     
   }
   
@@ -272,7 +325,7 @@ public class Test {
     return x;
   }
   
-  /**FUNCTION: CHECK ACCEPT STEP
+  /**FUNCTION: TEST ACCEPT STEP
    * Checks if the method acceptStep modifies its parameters accordingly
    * Checks if nAccept is incremented correctly
    * @param nDim
@@ -280,7 +333,7 @@ public class Test {
    * @param seed
    * @param name
    */
-  static void checkAcceptStep(int nDim, int chainLength, int seed, String name) {
+  static void testAcceptStep(int nDim, int chainLength, int seed, String name) {
     System.out.println("==========");
     System.out.println(name);
     MersenneTwister rng = new MersenneTwister(seed);
@@ -361,6 +414,111 @@ public class Test {
       
     }
     
+  }
+  
+  /**FUNCTION: TEST COPY AND EXTEND CONSTRUCTOR
+   * Test the copy and extend constructor, runs 2 chains of chainLength, 1 stops at subChainLength
+   * and then calls the copy and extend constructor to run the remaining steps
+   * Checks the 2 chains has the same nStep
+   * Checks the 2 chains has the same nSample
+   * Checks the 2 chains has the exact same chainArray
+   * @param nDim Number of dimensions
+   * @param chainLength Length of chain
+   * @param subChainLength Length of the first run
+   * @param seed for rng
+   * @param name
+   */
+  static void testCopyExtendConstructor(int nDim, int chainLength, int subChainLength,
+      int seed, String name) {
+    
+    System.out.println("==========");
+    System.out.println(name);
+    
+    //for the rwmh family of mcmc
+    for (int iChain=0; iChain<6; iChain++) {
+      
+      //boolean for the tests
+      boolean isNStep = true;
+      boolean isNSample = true;
+      boolean isSame = true;
+      
+      //get the chain and run it all the way
+      MersenneTwister rng = new MersenneTwister(seed);
+      Mcmc chain = getChain(iChain, nDim, chainLength, rng);
+      chain.run();
+      
+      //get the chain, run it for subChainLength, copy and extend, then run the remaining steps
+      rng = new MersenneTwister(seed);
+      Mcmc chainUseCopyConstructor = getChain(iChain, nDim, subChainLength, rng);
+      chainUseCopyConstructor.run();
+      chainUseCopyConstructor = copyConstructor(iChain, chainUseCopyConstructor,
+          chainLength - subChainLength);
+      chainUseCopyConstructor.run();
+      
+      //check if nStep are the same
+      if (chain.nStep != chainUseCopyConstructor.nStep) {
+        isNStep = false;
+      }
+      //check if nSample are the same
+      if (chain.nSample != chainUseCopyConstructor.nSample) {
+        isNSample = false;
+      }
+      //check if chainArray are the same
+      if (chain.chainArray.minus(chainUseCopyConstructor.chainArray).elementPower(2).elementSum()
+          != 0) {
+        isSame = false;
+      };
+      
+      System.out.println(chain.getClass().getName());
+      System.out.println("pass nStep test = "+isNStep);
+      System.out.println("pass nSample test = "+isNSample);
+      System.out.println("pass isSame test = "+isSame);
+      
+    }
+  }
+  
+  /**FUNCTION: TEST THIN
+   * Test how the chain behaves with thinning
+   * Checks if the number of rows in chainArray is correct
+   * Checks if nStep is correct, this is the number of MCMC steps
+   * Checks if nSample is correct
+   * @param nDim
+   * @param chainLength
+   * @param nThin
+   * @param seed
+   * @param name
+   */
+  static void testThin(int nDim, int chainLength, int nThin, int seed, String name) {
+    System.out.println("==========");
+    System.out.println(name);
+    
+    //for the rwmh family of mcmc
+    for (int iChain=0; iChain<6; iChain++) {
+      //boolean for the tests
+      boolean isArrayHeight = true;
+      boolean isNStep = true;
+      boolean isNSample = true;
+      
+      //get the chain and run it all the way
+      MersenneTwister rng = new MersenneTwister(seed);
+      Mcmc chain = getChain(iChain, nDim, chainLength, rng);
+      chain.setNThin(nThin);
+      chain.run();
+      
+      if (chain.chainArray.numRows() != chainLength) {
+        isArrayHeight = false;
+      }
+      if (chain.nStep != ( (chainLength-1)*nThin ) ) {
+        isNStep = false;
+      }
+      if (chain.nSample != (chainLength)) {
+        isNSample = false;
+      }
+      System.out.println(chain.getClass().getName());
+      System.out.println("pass chainArray height test = "+isArrayHeight);
+      System.out.println("pass nStep test = "+isNStep);
+      System.out.println("pass nSample test = "+isNSample);
+    }
   }
   
 }
