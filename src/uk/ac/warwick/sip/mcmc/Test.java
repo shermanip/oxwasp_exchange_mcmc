@@ -8,6 +8,7 @@ public class Test {
   
   static public void main(String[] args) {
     
+    /*
     testChain(10, 1000, 3, 1262924406, "Test 1.1");
     testChain(10, 1000, 100, 1262924406, "Test 1.2");
     testChain(10, 1000, 999, 1262924406, "Test 1.3");
@@ -25,6 +26,11 @@ public class Test {
     testAdaptive(32, 1000, 780825788, "Test 6.1");
     testAdaptive(32, 1000, 442405056, "Test 6.2");
     testAdaptive(32, 1000, 916848177, "Test 6.3");
+    */
+    testHmc(16, 1000, 1742863098, "Test 7.1");
+    testHmc(32, 1000, 1742863098, "Test 7.2");
+    testHmc(64, 1000, 1742863098, "Test 7.3");
+    testHmc(128, 1000, 1742863098, "Test 7.4");
   }
   
   /**FUNCTION: GET CHAIN
@@ -593,5 +599,102 @@ public class Test {
       }
     }
   }
+  
+  
+  /**FUNCTION: TEST HMC
+   * Test if the method getHamiltonian doesn't change the parameters
+   * Test if the positionStep and momentumStep methods change the correct parameters
+   * Test if momentumStep steps produce the same result when doing one leap frog vs 2 half leap frog
+   * @param nDim Number of dimensions
+   * @param chainLength Length of the chain (not really needed)
+   * @param seed Seed for the rng
+   * @param name Name of the test
+   */
+  static void testHmc(int nDim, int chainLength, int seed, String name) {
+    
+    //prin name of the test
+    System.out.println("==========");
+    System.out.println(name);
+    
+    //for each mcmc class
+    for (int iMcmc=3; iMcmc<6; iMcmc++) {
+      
+      //booleans for the tests
+      //test if the hamiltonian change the parameters
+      boolean isHamiltonianModifyParameterTest = true;
+      //test if the momentum step modify the parameters correctly
+      boolean isMomentumStepModifyTest = true;
+      //test if the position step modify the parameters correctly
+      boolean isPositionStepModifyTest = true;
+      
+      //random number generator
+      MersenneTwister rng = new MersenneTwister(seed);
+      HamiltonianMonteCarlo chain = (HamiltonianMonteCarlo) getChain(iMcmc, nDim, chainLength, rng);
+      
+      //instantiate column vector for the current value of the chain
+      SimpleMatrix x = chain.chainArray.extractVector(true, 0);
+      CommonOps_DDRM.transpose(x.getDDRM());
+      
+      //instantiate random position and random momentum
+      SimpleMatrix position = new SimpleMatrix(nDim,1);
+      for (int iDim=0; iDim<nDim; iDim++) {
+        position.set(iDim, rng.nextGaussian());
+      }
+      SimpleMatrix momentum = chain.getMomentum();
+      
+      //copy position and momentum, this is then compared after calling getHamiltonian
+      SimpleMatrix positionCopy = new SimpleMatrix(position);
+      SimpleMatrix momentumCopy = new SimpleMatrix(momentum);
+      chain.getHamiltonian(position, momentum);
+      //check if the copy of position and momentum are the same
+      if ( (!position.isIdentical(positionCopy, 0)) || (!momentum.isIdentical(momentumCopy, 0))) {
+        isHamiltonianModifyParameterTest = false;
+      }
+      
+      //copy the position and momentum vectors
+      //test if the momentumStep modify the momentum vector only
+      positionCopy = new SimpleMatrix(position);
+      momentumCopy = new SimpleMatrix(momentum);
+      chain.momentumStep(position, momentum, true);
+      if ( !position.isIdentical(positionCopy, 0) ) {
+        isMomentumStepModifyTest = false;
+      }
+      if ( momentum.isIdentical(momentumCopy, 0) ) {
+        isMomentumStepModifyTest = false;
+      }
+      
+      //copy the position and momentum vectors
+      //test if the positionStep modify the position vector only
+      positionCopy = new SimpleMatrix(position);
+      momentumCopy = new SimpleMatrix(momentum);
+      chain.positionStep(position, momentum);
+      if ( position.isIdentical(positionCopy, 0) ) {
+        isPositionStepModifyTest = false;
+      }
+      if ( !momentum.isIdentical(momentumCopy, 0) ) {
+        isPositionStepModifyTest = false;
+      }
+      
+      //make two copies of the momentum vector
+      //one copy takes a full step
+      //the other copy take 2 half steps
+      //compare the two, they should be similar, look at the squared error
+      SimpleMatrix momentumHalfSteps = new SimpleMatrix(momentum);
+      SimpleMatrix momentumFullStep = new SimpleMatrix(momentum);
+      chain.momentumStep(position, momentumHalfSteps, true);
+      chain.momentumStep(position, momentumHalfSteps, true);
+      chain.momentumStep(position, momentumFullStep, false);
+      double squaredError = momentumFullStep.minus(momentumHalfSteps).elementPower(2).elementSum();
+      
+      //print results of the test
+      System.out.println(chain.getClass().getName());
+      System.out.println("pass hamiltonian modification test = "+isHamiltonianModifyParameterTest);
+      System.out.println("pass momentum step modification test = "+isMomentumStepModifyTest);
+      System.out.println("pass position step modification test = "+isPositionStepModifyTest);
+      System.out.println("squared error between one leap frog and 2 half leap frog = "
+          +squaredError);
+    }
+  }
+  
   
 }
