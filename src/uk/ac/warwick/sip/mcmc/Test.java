@@ -4,33 +4,41 @@ import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
+import uk.ac.warwick.sip.mcmc.NoUTurnSampler.Tree;
+
 public class Test {
   
   static public void main(String[] args) {
     
     /*
-    testChain(10, 1000, 3, 1262924406, "Test 1.1");
-    testChain(10, 1000, 100, 1262924406, "Test 1.2");
-    testChain(10, 1000, 999, 1262924406, "Test 1.3");
-    //testChain(100, 1000, 999, -178151448, "Test 1.4");
-    testCholesky(20, 409534955, "Test 2");
-    testAcceptStep(10, 100, 990390580, "Test 3");
-    testCopyExtendConstructor(32, 100, 20, 355497382, "Test 4.1");
-    testCopyExtendConstructor(32, 1000, 20, 355497382, "Test 4.2");
-    testCopyExtendConstructor(32, 1000, 100, 355497382, "Test 4.3");
-    testCopyExtendConstructor(64, 1000, 500, 355497382, "Test 4.4");
-    testThin(32, 100, 5, 438709310, "Test 5.1");
-    testThin(32, 100, 10, 438709310, "Test 5.2");
-    testThin(32, 1000, 10, 438709310, "Test 5.3");
-    testThin(32, 1000, 50, 438709310, "Test 5.4");
-    testAdaptive(32, 1000, 780825788, "Test 6.1");
-    testAdaptive(32, 1000, 442405056, "Test 6.2");
-    testAdaptive(32, 1000, 916848177, "Test 6.3");
+    testChain(10, 1000, 3, 1964976895, "Test 1.1");
+    testChain(10, 1000, 100, 1964976895, "Test 1.2");
+    testChain(10, 1000, 999, 1964976895, "Test 1.3");
+    //testChain(100, 1000, 999, 2021180607, "Test 1.4");
+    testCholesky(20, -1470540617, "Test 2");
+    testAcceptStep(10, 100, 1963517091, "Test 3");
+    testCopyExtendConstructor(32, 100, 20, -62811111, "Test 4.1");
+    testCopyExtendConstructor(32, 1000, 20, -62811111, "Test 4.2");
+    testCopyExtendConstructor(32, 1000, 100, -62811111, "Test 4.3");
+    testCopyExtendConstructor(64, 1000, 500, -62811111, "Test 4.4");
+    testThin(32, 100, 5, 1289694793, "Test 5.1");
+    testThin(32, 100, 10, 1289694793, "Test 5.2");
+    testThin(32, 1000, 10, 1289694793, "Test 5.3");
+    testThin(32, 1000, 50, 1289694793, "Test 5.4");
+    testAdaptive(32, 1000, -1538086464, "Test 6.1");
+    testAdaptive(32, 1000, -1538086464, "Test 6.2");
+    testAdaptive(32, 1000, -1538086464, "Test 6.3");
+    testHmc(16, 1742863098, "Test 7.1");
+    testHmc(32, 1742863098, "Test 7.2");
+    testHmc(64, 1742863098, "Test 7.3");
+    testHmc(128, 1742863098, "Test 7.4");
     */
-    testHmc(16, 1000, 1742863098, "Test 7.1");
-    testHmc(32, 1000, 1742863098, "Test 7.2");
-    testHmc(64, 1000, 1742863098, "Test 7.3");
-    testHmc(128, 1000, 1742863098, "Test 7.4");
+    testTree(32, 1, -1602079425, "Test 8.1");
+    testTree(32, 2, 1775435783, "Test 8.2");
+    testTree(32, 3, 568478633, "Test 8.3");
+    testTree(32, 4, -1728550799, "Test 8.4");
+    testTree(32, 5, -951342906, "Test 8.5");
+    testTree(32, 6, 201354591, "Test 8.6");
   }
   
   /**FUNCTION: GET CHAIN
@@ -606,13 +614,12 @@ public class Test {
    * Test if the positionStep and momentumStep methods change the correct parameters
    * Test if momentumStep steps produce the same result when doing one leap frog vs 2 half leap frog
    * @param nDim Number of dimensions
-   * @param chainLength Length of the chain (not really needed)
    * @param seed Seed for the rng
    * @param name Name of the test
    */
-  static void testHmc(int nDim, int chainLength, int seed, String name) {
+  static void testHmc(int nDim, int seed, String name) {
     
-    //prin name of the test
+    //print name of the test
     System.out.println("==========");
     System.out.println(name);
     
@@ -627,19 +634,16 @@ public class Test {
       //test if the position step modify the parameters correctly
       boolean isPositionStepModifyTest = true;
       
-      //random number generator
+      //random number generator and chain
       MersenneTwister rng = new MersenneTwister(seed);
-      HamiltonianMonteCarlo chain = (HamiltonianMonteCarlo) getChain(iMcmc, nDim, chainLength, rng);
+      HamiltonianMonteCarlo chain = (HamiltonianMonteCarlo) getChain(iMcmc, nDim, 100, rng);
       
       //instantiate column vector for the current value of the chain
       SimpleMatrix x = chain.chainArray.extractVector(true, 0);
       CommonOps_DDRM.transpose(x.getDDRM());
       
       //instantiate random position and random momentum
-      SimpleMatrix position = new SimpleMatrix(nDim,1);
-      for (int iDim=0; iDim<nDim; iDim++) {
-        position.set(iDim, rng.nextGaussian());
-      }
+      SimpleMatrix position = getRandomVector(nDim, rng);
       SimpleMatrix momentum = chain.getMomentum();
       
       //copy position and momentum, this is then compared after calling getHamiltonian
@@ -696,5 +700,130 @@ public class Test {
     }
   }
   
+  /**FUNCTION: TEST TREE
+   * Test if the parameters of constructing new trees are left unmodified
+   * Test if the height of tree instantiated from a seed, growing and building is correct
+   * Test if the subTree is of the correct height
+   * Test if growing the tree leaves the correct parameters unmodified
+   * @param nDim
+   * @param nGrow
+   * @param seed
+   * @param name
+   */
+  static void testTree(int nDim, int nGrow, int seed, String name) {
+    
+    //print name of the test
+    System.out.println("==========");
+    System.out.println(name);
+    
+    //for each mcmc class
+    for (int iMcmc=4; iMcmc<6; iMcmc++) {
+      
+      boolean isHeightZero = true;
+      boolean isHeightCorrectFromSeed = true;
+      boolean isSubTreeHeightTest= true;
+      boolean isModifyFromSeedTest = true;
+      boolean isGrowBackTest = true;
+      boolean isGrowForwardTest = true;
+      
+      //random number generator and chain
+      MersenneTwister rng = new MersenneTwister(seed);
+      NoUTurnSampler chain = (NoUTurnSampler) getChain(iMcmc, nDim, 100, rng);
+      
+      //instantiate random position and random momentum
+      SimpleMatrix position = getRandomVector(nDim, rng);
+      SimpleMatrix momentum = chain.getMomentum();
+      chain.sampleSliceVariable(chain.getHamiltonian(position, momentum));
+      
+      //make a copy of the position and momentum before planting and growing the tree
+      SimpleMatrix positionCopy = new SimpleMatrix(position);
+      SimpleMatrix momentumCopy = new SimpleMatrix(momentum);
+      
+      
+      //instantiate a tree of height 0, check the height
+      Tree baseTree = chain.newTree(position, momentum);
+      if (baseTree.height != 0) {
+        isHeightZero = false;
+      }
+      //count the number of times the grow() method has been called
+      int growCounter = 0;
+      
+      //for nGrow times
+      for (int iStep=0; iStep<nGrow; iStep++) {
+        
+        //if no u turn has been made
+        if (baseTree.hasNoUTurn) {
+          //grow the tree
+          boolean direction = rng.nextBoolean();
+          baseTree.grow(direction);
+          baseTree.bloom();
+          growCounter++;
+          
+          //if going forward in time, check the backward position vectors are the same
+          if (direction) {
+            if (!baseTree.subTree.positionBackward.isIdentical(baseTree.positionBackward, 0)) {
+              isGrowForwardTest = false;
+            }
+          //else going back in time, check the forward position vectors are the same
+          } else {
+            if (!baseTree.subTree.positionForward.isIdentical(baseTree.positionForward, 0)) {
+              isGrowBackTest = false;
+            }
+          }
+        }
+      }
+      
+      //check if the tree height corresponds to the number of times grow() was called
+      if (baseTree.height != growCounter) {
+        isHeightCorrectFromSeed = false;
+      }
+      //check if the sub height corresponds to the number of times grow() was called - 1
+      if (baseTree.subTree.height != (growCounter - 1)) {
+        isSubTreeHeightTest = false;
+      }
+      //check if the position and momentum vectors are left unmodified
+      if ( (!position.isIdentical(positionCopy, 0)) || (!momentum.isIdentical(momentumCopy, 0)) ) {
+        isModifyFromSeedTest = false;
+      }
+      
+      //tests for calling the constructor for instantiating a tree of a given height
+      boolean isModifyFromConstructorTest = true;
+      boolean isHeightCorrectFromConstructor = true;
+      //make a copy of the position and momentum
+      positionCopy = new SimpleMatrix(position);
+      momentumCopy = new SimpleMatrix(momentum);
+      
+      //instantiate a tree of nGrow height
+      NoUTurnSampler.Tree tree = chain.newTree(position, momentum, rng.nextBoolean(), nGrow);
+      //check if the parameters are left unmodified
+      if ( (!position.isIdentical(positionCopy, 0)) || (!momentum.isIdentical(momentumCopy, 0)) ) {
+        isModifyFromConstructorTest = false;
+      }
+      
+      //if the tree has no u turn, check if the height corresponds to nGrow
+      if (tree.hasNoUTurn) {
+        if (tree.height != nGrow) {
+          isHeightCorrectFromConstructor = false;
+        }
+      //else the tree has made a u turn, the height of the tree should be less than nGrow
+      } else {
+        if (tree.height > nGrow) {
+          isHeightCorrectFromConstructor = false;
+        }
+      }
+      
+      //print results of the test
+      System.out.println(chain.getClass().getName());
+      System.out.println("pass tree height zero test = "+isHeightZero);
+      System.out.println("pass tree height from seed test = "+isHeightCorrectFromSeed);
+      System.out.println("pass subTree height from seed test = "+isSubTreeHeightTest);
+      System.out.println("pass tree modify from seed test = "+isModifyFromSeedTest);
+      System.out.println("pass grow forward from seed test = "+isGrowForwardTest);
+      System.out.println("pass grow backward from seed test = "+isGrowBackTest);
+      System.out.println("pass tree modify from constructor test = "+isModifyFromConstructorTest);
+      System.out.println("pass tree height from constructor test = "
+          +isHeightCorrectFromConstructor);
+    }
+  }
   
 }
