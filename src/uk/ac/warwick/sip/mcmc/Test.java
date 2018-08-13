@@ -7,6 +7,7 @@ import org.ejml.simple.SimpleMatrix;
 public class Test {
   
   static public void main(String[] args) {
+    
     testChain(10, 1000, 3, 1262924406, "Test 1.1");
     testChain(10, 1000, 100, 1262924406, "Test 1.2");
     testChain(10, 1000, 999, 1262924406, "Test 1.3");
@@ -21,6 +22,9 @@ public class Test {
     testThin(32, 100, 10, 438709310, "Test 5.2");
     testThin(32, 1000, 10, 438709310, "Test 5.3");
     testThin(32, 1000, 50, 438709310, "Test 5.4");
+    testAdaptive(32, 1000, 780825788, "Test 6.1");
+    testAdaptive(32, 1000, 442405056, "Test 6.2");
+    testAdaptive(32, 1000, 916848177, "Test 6.3");
   }
   
   /**FUNCTION: GET CHAIN
@@ -287,13 +291,12 @@ public class Test {
         isNoNull = false;
       }
       //check if the difference of cov before and after chol is 0
-      double sumDiffSquared = cov.minus(covClone).elementPower(2).elementSum();
-      if (sumDiffSquared!=0) {
+      if (!cov.isIdentical(covClone, 0)) {
         isNotModify = false;
       };
       //test is L*LT is similar
       SimpleMatrix cholCholT = chol.mult(chol.transpose());
-      sumDiffSquared = cholCholT.minus(cov).elementPower(2).elementSum();
+      double sumDiffSquared = cholCholT.minus(cov).elementPower(2).elementSum();
       System.out.println("Squared error in Cholesky decomposition = "+sumDiffSquared);
       
       //check if cholesky of chol of N(0,1) outputs null
@@ -356,10 +359,10 @@ public class Test {
         SimpleMatrix proposalBefore = new SimpleMatrix(proposal);
         chain.acceptStep(0.0, position, proposal);
         //check if both parameters are not modified
-        if (positionBefore.minus(position).elementPower(2).elementSum() != 0) {
+        if (!positionBefore.isIdentical(position,0)) {
           isModifyTest = false;
         }
-        if (proposalBefore.minus(proposal).elementPower(2).elementSum() != 0) {
+        if (!proposalBefore.isIdentical(proposal,0)) {
           isModifyTest = false;
         }
         //test if nAccept = 0
@@ -374,10 +377,10 @@ public class Test {
         proposalBefore = new SimpleMatrix(proposal);
         chain.acceptStep(1.0, position, proposal);
         //check if position is modified and proposal is not modified
-        if (proposal.minus(position).elementPower(2).elementSum() != 0) {
+        if (!proposal.isIdentical(position,0)) {
           isModifyTest = false;
         }
-        if (proposalBefore.minus(proposal).elementPower(2).elementSum() != 0) {
+        if (!proposalBefore.isIdentical(proposal,0)) {
           isModifyTest = false;
         }
         //test if nAccept = 0
@@ -392,17 +395,17 @@ public class Test {
         proposalBefore = new SimpleMatrix(proposal);
         chain.acceptStep(0.5, position, proposal);
         //check if the proposal is not modified
-        if (proposalBefore.minus(proposal).elementPower(2).elementSum() != 0) {
+        if (!proposalBefore.isIdentical(proposal, 0)) {
           isModifyTest = false;
         }
         //check if the position has been modified with an accept step
         if (chain.nAccept == 2) {
-          if (proposal.minus(position).elementPower(2).elementSum() != 0) {
+          if (!proposal.isIdentical(position, 0)) {
             isModifyTest = false;
           }
         //check if the position has not been modified with a reject step
         } else {
-          if (positionBefore.minus(position).elementPower(2).elementSum() != 0) {
+          if (!positionBefore.isIdentical(position, 0)) {
             isModifyTest = false;
           }
         }
@@ -464,8 +467,7 @@ public class Test {
         isNSample = false;
       }
       //check if chainArray are the same
-      if (chain.chainArray.minus(chainUseCopyConstructor.chainArray).elementPower(2).elementSum()
-          != 0) {
+      if (!chain.chainArray.isIdentical(chainUseCopyConstructor.chainArray,0)) {
         isSame = false;
       };
       
@@ -518,6 +520,77 @@ public class Test {
       System.out.println("pass chainArray height test = "+isArrayHeight);
       System.out.println("pass nStep test = "+isNStep);
       System.out.println("pass nSample test = "+isNSample);
+    }
+  }
+  
+  /**FUNCTION: TEST ADAPTIVE
+   * Tests for AdaptiveRwmh and MixtureAdaptiveRwmh
+   * Tests if the chain only adapts after nStepTillAdaptive steps
+   * Test if the safety proposal is used when adapting (only for MixtureAdaptiveRwmh)
+   * Test if the safety is different from the initial
+   * @param nDim Number of dimensions
+   * @param chainLength Length of chain
+   * @param seed Seed for rng
+   * @param name Name of the test
+   */
+  static void testAdaptive(int nDim, int chainLength, int seed, String name) {
+    
+    //print test name
+    System.out.println("==========");
+    System.out.println(name);
+    
+    //for the rwmh family of mcmc
+    for (int iChain=1; iChain<=2; iChain++) {
+      
+      //boolean for the tests
+      boolean isUseInitialProposal = true; //if the initial proposal is used in non-adaptive stage
+      //if uses proposal which is different from the intial in adaptive stage
+      boolean isAdapting = false;
+      //if uses the initial proposal in the adaptive stage
+      boolean isSaftey = false;
+      
+      //instantiate the chain
+      MersenneTwister rng = new MersenneTwister(seed);
+      AdaptiveRwmh chain = (AdaptiveRwmh) getChain(iChain, nDim, chainLength, rng);
+      //copy the proposal covariance
+      SimpleMatrix proposalCovarianceChol = new SimpleMatrix(chain.proposalCovarianceChol);
+      
+      //instantiate column vector for the current value of the chain
+      SimpleMatrix x = chain.chainArray.extractVector(true, 0);
+      CommonOps_DDRM.transpose(x.getDDRM());
+      
+      //run the chain for nStep
+      for (int i=0; i<(chainLength-1); i++) {
+        
+        //do mcmc step
+        chain.step(x);
+        //save x to the chain array
+        chain.setCurrentStep(x);
+        
+        //test in the non-adaptive stage, the chain uses the initial proposal
+        if (i < chain.nStepTillAdaptive) {
+          if(!proposalCovarianceChol.isIdentical(chain.proposalCovarianceChol, 0.0)) {
+            isUseInitialProposal = false;
+          }
+        } else { //else this is the adaptive stage
+          //check if the proposal is not the same as the initial
+          if(!proposalCovarianceChol.isIdentical(chain.proposalCovarianceChol, 0.0)) {
+            isAdapting = true;
+          }
+          //check if the proposal is the same as the initial
+          if(proposalCovarianceChol.isIdentical(chain.proposalCovarianceChol, 0.0)) {
+            isSaftey = true;
+          }
+        }
+      }
+      //print results of the test
+      System.out.println(chain.getClass().getName());
+      System.out.println("pass useInitialProposal test = "+isUseInitialProposal);
+      System.out.println("pass adapting test = "+isAdapting);
+      //only MixtureAdaptiveRwmh uses the saftey proposal, print the result of it
+      if (iChain==2) {
+        System.out.println("pass saftey test = "+isSaftey);
+      }
     }
   }
   
