@@ -1,5 +1,7 @@
 package uk.ac.warwick.sip.mcmc;
 
+import java.io.PrintWriter;
+
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.simple.SimpleMatrix;
@@ -8,37 +10,44 @@ import uk.ac.warwick.sip.mcmc.NoUTurnSampler.Tree;
 
 public class Test {
   
+  static PrintWriter printWriter;
+  
   static public void main(String[] args) {
     
-    /*
-    testChain(10, 1000, 3, 1964976895, "Test 1.1");
-    testChain(10, 1000, 100, 1964976895, "Test 1.2");
-    testChain(10, 1000, 999, 1964976895, "Test 1.3");
-    //testChain(100, 1000, 999, 2021180607, "Test 1.4");
-    testCholesky(20, -1470540617, "Test 2");
-    testAcceptStep(10, 100, 1963517091, "Test 3");
-    testCopyExtendConstructor(32, 100, 20, -62811111, "Test 4.1");
-    testCopyExtendConstructor(32, 1000, 20, -62811111, "Test 4.2");
-    testCopyExtendConstructor(32, 1000, 100, -62811111, "Test 4.3");
-    testCopyExtendConstructor(64, 1000, 500, -62811111, "Test 4.4");
-    testThin(32, 100, 5, 1289694793, "Test 5.1");
-    testThin(32, 100, 10, 1289694793, "Test 5.2");
-    testThin(32, 1000, 10, 1289694793, "Test 5.3");
-    testThin(32, 1000, 50, 1289694793, "Test 5.4");
-    testAdaptive(32, 1000, -1538086464, "Test 6.1");
-    testAdaptive(32, 1000, -1538086464, "Test 6.2");
-    testAdaptive(32, 1000, -1538086464, "Test 6.3");
-    testHmc(16, 1742863098, "Test 7.1");
-    testHmc(32, 1742863098, "Test 7.2");
-    testHmc(64, 1742863098, "Test 7.3");
-    testHmc(128, 1742863098, "Test 7.4");
-    */
-    testTree(32, 1, -1602079425, "Test 8.1");
-    testTree(32, 2, 1775435783, "Test 8.2");
-    testTree(32, 3, 568478633, "Test 8.3");
-    testTree(32, 4, -1728550799, "Test 8.4");
-    testTree(32, 5, -951342906, "Test 8.5");
-    testTree(32, 6, 201354591, "Test 8.6");
+    try {
+      printWriter = new PrintWriter("test.txt");
+      testChain(10, 1000, 3, 1964976895, "Test 1.1");
+      testChain(10, 1000, 100, 1964976895, "Test 1.2");
+      testChain(10, 1000, 999, 1964976895, "Test 1.3");
+      testChain(100, 1000, 999, 2021180607, "Test 1.4");
+      testCholesky(20, -1470540617, "Test 2");
+      testAcceptStep(10, 100, 1963517091, "Test 3");
+      testCopyExtendConstructor(32, 100, 20, -62811111, "Test 4.1");
+      testCopyExtendConstructor(32, 1000, 20, -62811111, "Test 4.2");
+      testCopyExtendConstructor(32, 1000, 100, -62811111, "Test 4.3");
+      testCopyExtendConstructor(64, 1000, 500, -62811111, "Test 4.4");
+      testThin(32, 100, 5, 1289694793, "Test 5.1");
+      testThin(32, 100, 10, 1289694793, "Test 5.2");
+      testThin(32, 1000, 10, 1289694793, "Test 5.3");
+      testThin(32, 1000, 50, 1289694793, "Test 5.4");
+      testAdaptive(32, 1000, -1538086464, "Test 6.1");
+      testAdaptive(32, 1000, -1538086464, "Test 6.2");
+      testAdaptive(32, 1000, -1538086464, "Test 6.3");
+      testHmc(16, 1742863098, "Test 7.1");
+      testHmc(32, 1742863098, "Test 7.2");
+      testHmc(64, 1742863098, "Test 7.3");
+      testHmc(128, 1742863098, "Test 7.4");
+      testTree(32, 1, -1602079425, "Test 8.1");
+      testTree(32, 2, 1775435783, "Test 8.2");
+      testTree(32, 3, 568478633, "Test 8.3");
+      testTree(32, 4, -1728550799, "Test 8.4");
+      testTree(32, 5, -951342906, "Test 8.5");
+      testTree(32, 6, 201354591, "Test 8.6");
+      printWriter.flush();
+      printWriter.close();
+    } catch (Exception expection) {
+      
+    }
   }
   
   /**FUNCTION: GET CHAIN
@@ -141,8 +150,8 @@ public class Test {
   static void testChain(int nDim, int chainLength, int nStep,
       int seed, String name) {
     
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     
     //for each mcmc class
     for (int iMcmc=0; iMcmc<6; iMcmc++) {
@@ -224,13 +233,13 @@ public class Test {
       squaredErrorArray[1] = squaredError.elementSum();
       
       //print the squared error and return it
-      System.out.println(chain.getClass().getName());
-      System.out.println("Squared error in mean = "+squaredErrorArray[0]);
-      System.out.println("Squared error in covariance = "+squaredErrorArray[1]);
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("Squared error in mean = "+squaredErrorArray[0]);
+      printWriter.println("Squared error in covariance = "+squaredErrorArray[1]);
       
-      System.out.println("pass nStep test = "+isNStep);
-      System.out.println("pass nSample test = "+isNSample);
-      System.out.println("pass allocation test = "+isAllocation);
+      printWriter.println("pass nStep test = "+isNStep);
+      printWriter.println("pass nSample test = "+isNSample);
+      printWriter.println("pass allocation test = "+isAllocation);
     }
   }
   
@@ -287,8 +296,8 @@ public class Test {
    * @return true if pass the test
    */
   static void testCholesky(int nDim, int seed, String name) {
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     int nTest = 10; // number of tests
     MersenneTwister rng = new MersenneTwister(seed);
     boolean isNoNull = true;
@@ -311,7 +320,7 @@ public class Test {
       //test is L*LT is similar
       SimpleMatrix cholCholT = chol.mult(chol.transpose());
       double sumDiffSquared = cholCholT.minus(cov).elementPower(2).elementSum();
-      System.out.println("Squared error in Cholesky decomposition = "+sumDiffSquared);
+      printWriter.println("Squared error in Cholesky decomposition = "+sumDiffSquared);
       
       //check if cholesky of chol of N(0,1) outputs null
       SimpleMatrix randGaussian = new SimpleMatrix(nDim, nDim);
@@ -323,9 +332,9 @@ public class Test {
         isNull = false;
       }
     }
-    System.out.println("pass no null test = "+isNoNull);
-    System.out.println("pass null test = "+isNull);
-    System.out.println("pass modify test = "+isNotModify);
+    printWriter.println("pass no null test = "+isNoNull);
+    printWriter.println("pass null test = "+isNull);
+    printWriter.println("pass modify test = "+isNotModify);
     
   }
   
@@ -351,8 +360,8 @@ public class Test {
    * @param name
    */
   static void testAcceptStep(int nDim, int chainLength, int seed, String name) {
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     MersenneTwister rng = new MersenneTwister(seed);
     int nTest = 100; //number of times to repeat the test
     boolean isModifyTest = true;
@@ -425,9 +434,9 @@ public class Test {
         }
       }
       
-      System.out.println(chain.getClass().getName());
-      System.out.println("pass modify test = "+isModifyTest);
-      System.out.println("pass nAccept test = "+isNAcceptTest);
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("pass modify test = "+isModifyTest);
+      printWriter.println("pass nAccept test = "+isNAcceptTest);
       
     }
     
@@ -448,8 +457,8 @@ public class Test {
   static void testCopyExtendConstructor(int nDim, int chainLength, int subChainLength,
       int seed, String name) {
     
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     
     //for the rwmh family of mcmc
     for (int iChain=0; iChain<6; iChain++) {
@@ -485,10 +494,10 @@ public class Test {
         isSame = false;
       };
       
-      System.out.println(chain.getClass().getName());
-      System.out.println("pass nStep test = "+isNStep);
-      System.out.println("pass nSample test = "+isNSample);
-      System.out.println("pass isSame test = "+isSame);
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("pass nStep test = "+isNStep);
+      printWriter.println("pass nSample test = "+isNSample);
+      printWriter.println("pass isSame test = "+isSame);
       
     }
   }
@@ -505,8 +514,8 @@ public class Test {
    * @param name
    */
   static void testThin(int nDim, int chainLength, int nThin, int seed, String name) {
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     
     //for the rwmh family of mcmc
     for (int iChain=0; iChain<6; iChain++) {
@@ -530,10 +539,10 @@ public class Test {
       if (chain.nSample != (chainLength)) {
         isNSample = false;
       }
-      System.out.println(chain.getClass().getName());
-      System.out.println("pass chainArray height test = "+isArrayHeight);
-      System.out.println("pass nStep test = "+isNStep);
-      System.out.println("pass nSample test = "+isNSample);
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("pass chainArray height test = "+isArrayHeight);
+      printWriter.println("pass nStep test = "+isNStep);
+      printWriter.println("pass nSample test = "+isNSample);
     }
   }
   
@@ -550,8 +559,8 @@ public class Test {
   static void testAdaptive(int nDim, int chainLength, int seed, String name) {
     
     //print test name
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     
     //for the rwmh family of mcmc
     for (int iChain=1; iChain<=2; iChain++) {
@@ -598,12 +607,12 @@ public class Test {
         }
       }
       //print results of the test
-      System.out.println(chain.getClass().getName());
-      System.out.println("pass useInitialProposal test = "+isUseInitialProposal);
-      System.out.println("pass adapting test = "+isAdapting);
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("pass useInitialProposal test = "+isUseInitialProposal);
+      printWriter.println("pass adapting test = "+isAdapting);
       //only MixtureAdaptiveRwmh uses the saftey proposal, print the result of it
       if (iChain==2) {
-        System.out.println("pass saftey test = "+isSaftey);
+        printWriter.println("pass saftey test = "+isSaftey);
       }
     }
   }
@@ -620,8 +629,8 @@ public class Test {
   static void testHmc(int nDim, int seed, String name) {
     
     //print name of the test
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     
     //for each mcmc class
     for (int iMcmc=3; iMcmc<6; iMcmc++) {
@@ -691,11 +700,11 @@ public class Test {
       double squaredError = momentumFullStep.minus(momentumHalfSteps).elementPower(2).elementSum();
       
       //print results of the test
-      System.out.println(chain.getClass().getName());
-      System.out.println("pass hamiltonian modification test = "+isHamiltonianModifyParameterTest);
-      System.out.println("pass momentum step modification test = "+isMomentumStepModifyTest);
-      System.out.println("pass position step modification test = "+isPositionStepModifyTest);
-      System.out.println("squared error between one leap frog and 2 half leap frog = "
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("pass hamiltonian modification test = "+isHamiltonianModifyParameterTest);
+      printWriter.println("pass momentum step modification test = "+isMomentumStepModifyTest);
+      printWriter.println("pass position step modification test = "+isPositionStepModifyTest);
+      printWriter.println("squared error between one leap frog and 2 half leap frog = "
           +squaredError);
     }
   }
@@ -713,8 +722,8 @@ public class Test {
   static void testTree(int nDim, int nGrow, int seed, String name) {
     
     //print name of the test
-    System.out.println("==========");
-    System.out.println(name);
+    printWriter.println("==========");
+    printWriter.println(name);
     
     //for each mcmc class
     for (int iMcmc=4; iMcmc<6; iMcmc++) {
@@ -813,15 +822,15 @@ public class Test {
       }
       
       //print results of the test
-      System.out.println(chain.getClass().getName());
-      System.out.println("pass tree height zero test = "+isHeightZero);
-      System.out.println("pass tree height from seed test = "+isHeightCorrectFromSeed);
-      System.out.println("pass subTree height from seed test = "+isSubTreeHeightTest);
-      System.out.println("pass tree modify from seed test = "+isModifyFromSeedTest);
-      System.out.println("pass grow forward from seed test = "+isGrowForwardTest);
-      System.out.println("pass grow backward from seed test = "+isGrowBackTest);
-      System.out.println("pass tree modify from constructor test = "+isModifyFromConstructorTest);
-      System.out.println("pass tree height from constructor test = "
+      printWriter.println(chain.getClass().getName());
+      printWriter.println("pass tree height zero test = "+isHeightZero);
+      printWriter.println("pass tree height from seed test = "+isHeightCorrectFromSeed);
+      printWriter.println("pass subTree height from seed test = "+isSubTreeHeightTest);
+      printWriter.println("pass tree modify from seed test = "+isModifyFromSeedTest);
+      printWriter.println("pass grow forward from seed test = "+isGrowForwardTest);
+      printWriter.println("pass grow backward from seed test = "+isGrowBackTest);
+      printWriter.println("pass tree modify from constructor test = "+isModifyFromConstructorTest);
+      printWriter.println("pass tree height from constructor test = "
           +isHeightCorrectFromConstructor);
     }
   }
