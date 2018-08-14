@@ -6,26 +6,28 @@ import org.ejml.dense.row.decomposition.TriangularSolver_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
 /**CLASS: HAMILTONIAN MONTE CARLO
- * Samplier which uses Hamiltonian dynamics.
- * At a step, the momentum vector is proposed using a Gaussian random variable.
+ * Sampler which uses Hamiltonian dynamics
+ * Reference: Neal, R.M. (2011)
+ * At a step, the momentum vector is proposed using a Gaussian random variable
  * The particle then moves about obeying Hamiltonian dynamics, this is done using leap frog steps
  * The resulting position of the particle is accept/rejected using the cannonical distribution
- * 
- * Use the method run() to run the chain
  */
 public class HamiltonianMonteCarlo extends Mcmc {
   
   //cholesky decomposition of the mass matrix
   protected SimpleMatrix massChol;
+  //inverse of the mass matrix
   protected SimpleMatrix massInverse;
   //size of the leap frog step
-  protected double sizeLeapFrog; 
-  protected int nLeapFrog; //number of leap frog step for each mcmc step
+  protected double sizeLeapFrog;
+  //number of leap frog step for each mcmc step
+  protected int nLeapFrog;
   
   /**CONSTRUCTOR
+   * Sampler which uses Hamiltonian dynamics
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
-   * @param massMatrix mass matrix 
+   * @param massMatrix mass matrix, determines the variance of the momentum
    * @param sizeLeapFrog size of the leap frog step
    * @param nLeapFrog number of leap frog step for each mcmc step
    * @param rng Random number generator to generate all the random numbers
@@ -40,11 +42,10 @@ public class HamiltonianMonteCarlo extends Mcmc {
     this.massChol = Global.cholesky(massMatrix);
     //calculate the inverse of the mass matrix, this is done using the cholesky decomposition
     SimpleMatrix massCholInverse = new SimpleMatrix(massChol);
-    //inverse the cholesky decomposition to work out the inverse mass
+    //invert the cholesky decomposition to work out the inverse mass
     TriangularSolver_DDRM.invertLower(massCholInverse.getDDRM().getData(), this.getNDim());
     this.massInverse = new SimpleMatrix(this.getNDim(), this.getNDim());
     CommonOps_DDRM.multInner(massCholInverse.getDDRM(), massInverse.getDDRM());
-    
   }
   
   /**CONSTRUCTOR
@@ -85,8 +86,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     
     //get the canonical distributions given the hamiltonians
     double canonicalCurrent = Math.exp(-this.getHamiltonian(position, momentum));
-    double canonicalProposal = Math.exp(-this.getHamiltonian(positionProposal
-        ,momentumProposal));
+    double canonicalProposal = Math.exp(-this.getHamiltonian(positionProposal, momentumProposal));
     
     //do acceptance step
     double acceptProb = canonicalProposal/canonicalCurrent;
@@ -97,9 +97,9 @@ public class HamiltonianMonteCarlo extends Mcmc {
   }
   
   /**METHOD: GET MOMENTUM
-   * //generate a random momentum vector
-   * //it is generated using Normal with covariance diag(momentumScale)
-   * //random Normal uses the rng
+   * generate a random momentum vector
+   * it is generated using Normal with mass covariance
+   * random Normal uses the rng
    * @return Column vector, random momentum
    */
   protected SimpleMatrix getMomentum() {
@@ -161,7 +161,6 @@ public class HamiltonianMonteCarlo extends Mcmc {
     CommonOps_DDRM.scale(this.sizeLeapFrog, positionChange.getDDRM());
     CommonOps_DDRM.addEquals(positionProposal.getDDRM(), positionChange.getDDRM());
   }
-  
   
   /**METHOD: GET HAMILTONIAN
    * Returns the Hamiltonian (or energy of the system) given the position and momentum

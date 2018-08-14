@@ -17,7 +17,7 @@ import org.ejml.simple.SimpleMatrix;
  * 
  * A few options:
  *   -Thinning can be used by calling the method setNThin, this is doing a number of MCMC steps
- *   between each sample, the aim to reduct autocorrelation
+ *   between each sample, the aim to reduce autocorrelation
  *   -The initial value can be set using the method setInitialValue
  *   -Diagnostics such as the mean, covariance, acceptance rate can be obtained using the appropriate
  *   getter methods
