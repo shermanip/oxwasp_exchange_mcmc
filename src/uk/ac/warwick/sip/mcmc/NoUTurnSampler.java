@@ -1,5 +1,8 @@
 package uk.ac.warwick.sip.mcmc;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.simple.SimpleMatrix;
 
@@ -18,6 +21,9 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
   //a random double times the cannonical distribution
   protected double sliceVariable;
   
+  //array of vectors containing position vector of each leapfrog step
+  protected ArrayList<SimpleMatrix> leapFrogPositions;
+  
   /**CONSTRUCTOR
    * Adaptive HMC which adapts the number of leap frog steps so that no u turns are made
    * @param target Object which has a method to call the pdf
@@ -33,6 +39,8 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     //this is so that calling the method leapFrog() will only take on leap frog step
     super(target, chainLength, massMatrix, sizeLeapFrog, 1, rng);
     this.deltaMax = 1000;
+    //delete the superclass version of leapFrogPositions
+    super.leapFrogPositions = null;
   }
   
   /**CONSTRUCTOR
@@ -48,6 +56,13 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     this.deltaMax = chain.deltaMax;
   }
   
+  /**OVERRIDE: ADD TO LEAP FROG ARRAY
+   * Do nothing, this it to stop accessing the unused member variable super.leapFrogPositions
+   */
+  @Override
+  protected void addToLeapFrogArray(int index, SimpleMatrix position) {
+    //do nothing
+  }
   
   /**OVERRIDE: STEP
    * Does a step using the No U Turn Sampler
@@ -74,8 +89,14 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     Tree tree = this.newTree(position, momentum);
     tree.nSliceAccept++;
     
+    //instantiate array for storing all the leap frog steps and rejected steps
+    this.leapFrogPositions = new ArrayList<SimpleMatrix>();
+    //Initialise the arraylist
+    //afterwards, elements will be appended to this array by the object tree, see the subclass
+    this.leapFrogPositions.add(new SimpleMatrix(position));
+    
     //declare variable for flagging if an acceptance step has been taken
-    boolean hasAccept = false;
+    this.isAccepted = false;
     
     //while no u turn has been made
     while (tree.hasNoUTurn) {
@@ -99,7 +120,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
             / ((double) tree.nSliceAccept);
         if (this.rng.nextDouble() < probAccept) {
           tree.positionProposal = subTree.positionProposal;
-          hasAccept = true;
+          this.isAccepted = true;
         }
       }
       
@@ -109,7 +130,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     }
     
     //if an acceptance step has been taken, increment the number of acceptance steps
-    if (hasAccept) {
+    if (this.isAccepted) {
       this.nAccept++;
     }
     
@@ -143,6 +164,14 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
    */
   protected void adaptiveStep(Tree tree) {
     //do nothing
+  }
+  
+  /**METHOD: GET LEAP FROG POSITIONS
+   * Return an iterator which iterates all the leap frog positions in the latest HMC step
+   * @return iterator which iterates all the leap frog positions
+   */
+  public Iterator<SimpleMatrix> getLeapFrogPositionIterator(){
+    return this.leapFrogPositions.iterator();
   }
   
   /**METHOD: NEW TREE
@@ -273,6 +302,16 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
             momentumProposal);
         this.setUsingHamiltonian(hamiltonian);
         
+        //if no u turn has been made and a slice accept has been made
+        //save the leap frog position
+        if ( (this.nSliceAccept==1) & (this.hasNoUTurn) ) {
+          //if going in reverse time, prepend
+          if (isNegative) {
+            NoUTurnSampler.this.leapFrogPositions.add(0,positionProposal);
+          } else { //else going forward in time, append
+            NoUTurnSampler.this.leapFrogPositions.add(positionProposal);
+          }
+        }
         
       } else { //else this is not a base case
         

@@ -23,6 +23,10 @@ public class HamiltonianMonteCarlo extends Mcmc {
   //number of leap frog step for each mcmc step
   protected int nLeapFrog;
   
+  //array of vectors containing position vector of each leapfrog step
+  protected SimpleMatrix [] leapFrogPositions;
+  protected int maxNLeapFrog = 100; //maximum number of leap frog steps
+  
   /**CONSTRUCTOR
    * Sampler which uses Hamiltonian dynamics
    * @param target Object which has a method to call the pdf
@@ -46,6 +50,10 @@ public class HamiltonianMonteCarlo extends Mcmc {
     TriangularSolver_DDRM.invertLower(massCholInverse.getDDRM().getData(), this.getNDim());
     this.massInverse = new SimpleMatrix(this.getNDim(), this.getNDim());
     CommonOps_DDRM.multInner(massCholInverse.getDDRM(), massInverse.getDDRM());
+    
+    //fill leapFrogPositions with null
+    this.leapFrogPositions = new SimpleMatrix [this.maxNLeapFrog];
+    this.isAccepted = false;
   }
   
   /**CONSTRUCTOR
@@ -119,6 +127,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
    * another half momentum update
    * Two half momentum update is the same as a full momentum update, this is used in the program
    * The position and momentum proposal vectors ARE MODIFIED
+   * Save the leap frog steps
    * @param positionProposal Column vector containing the position, MODIFIED
    * @param momentumProposal Column vector containing the momentum, MODIFIED
    */
@@ -127,9 +136,22 @@ public class HamiltonianMonteCarlo extends Mcmc {
     for (int i=0; i<(this.nLeapFrog-1); i++) {
       this.positionStep(positionProposal, momentumProposal);
       this.momentumStep(positionProposal, momentumProposal, false);
+      //save the leap frog position
+      this.addToLeapFrogArray(i, new SimpleMatrix(positionProposal));
     }
     this.positionStep(positionProposal, momentumProposal);
     this.momentumStep(positionProposal, momentumProposal, true);
+    //save the leap frog position
+    this.addToLeapFrogArray(this.nLeapFrog-1, new SimpleMatrix(positionProposal));
+  }
+  
+  /**METHOD: ADD TO LEAP FROG ARRAY
+   * Add a leap frog step to the array leapFrogPositions
+   * @param index Pointer to position in leapFrogPositions array
+   * @param position Leap frog position, not modified
+   */
+  protected void addToLeapFrogArray(int index, SimpleMatrix position) {
+    this.leapFrogPositions[index] = new SimpleMatrix(position);
   }
   
   /**METHOD: MOMENTUM STEP
@@ -177,6 +199,38 @@ public class HamiltonianMonteCarlo extends Mcmc {
     double potentialEnergy = this.target.getPotential(position);
     //add all of the energies
     return kineticEnergy + potentialEnergy;
+  }
+  
+  /**METHOD: GET LEAP FROG POSITIONS
+   * Return the vector of a leap frog step of the last HMC step
+   * @param index which leap frog step to be requested
+   * @return double [] representing a position vector
+   */
+  public double [] getLeapFrogPositions(int index) {
+    SimpleMatrix leapFrogPosition = this.leapFrogPositions[index];
+    if (leapFrogPosition == null) {
+      return this.getLeapFrogPositions(index-1);
+    } else {
+      return leapFrogPosition.getDDRM().getData();
+    }
+  }
+  
+  /**METHOD: CHANGE NUMBER OF LEAP FROG STEPS
+   * Change the number of leap frog steps to do
+   * @param nLeapFrog Number of leap frog steps to do in a HMC step
+   */
+  public void setNLeapFrog(int nLeapFrog) {
+    //if there are MCMC steps to do...
+    if (this.nStep+1 < this.chainLength) {
+      this.nLeapFrog = nLeapFrog;
+    }
+  }
+  
+  /**METHOD: GET MAX N LEAP FROG
+   * @return maximum number of leap frog steps possible
+   */
+  public int getMaxNLeapFrog() {
+    return this.maxNLeapFrog;
   }
   
 }

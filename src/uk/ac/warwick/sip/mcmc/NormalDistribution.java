@@ -5,6 +5,8 @@ import java.lang.Math;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.decomposition.TriangularSolver_DDRM;
 import org.ejml.simple.SimpleMatrix;
+import uk.ac.warwick.sip.mcmc.TargetDistribution;
+import uk.ac.warwick.sip.mcmc.Global;
 
 /**CLASS: NORMAL DISTRIBUTION
  * Evaluates the multivariate Normal distribution pdf (up to a constant).
@@ -14,9 +16,10 @@ import org.ejml.simple.SimpleMatrix;
  */
 public class NormalDistribution extends TargetDistribution{
   
+  //mean vector of the normal distribution
+  protected SimpleMatrix mean;
   //cholesky decomposition of the covariance matrix as a lower triangle matrix
   protected SimpleMatrix covarianceChol;
-  protected SimpleMatrix covarianceInverse;
   
   /**CONSTRUCTOR
    * Stores the covariance of the Normal random variable with mean 0
@@ -25,16 +28,21 @@ public class NormalDistribution extends TargetDistribution{
    * @param covariance Covariance of the Normal random variable
    */
   public NormalDistribution(int nDim, SimpleMatrix covariance){
+    this(nDim, new SimpleMatrix(nDim, 1), covariance);
+  }
+  
+  /**CONSTRUCTOR
+   * Stores the covariance of the Normal random variable with supplied mean
+   * Returns the pdf when method getPdf is called
+   * @param nDim Number of dimensions
+   * @param mean Column vector
+   * @param covariance Covariance of the Normal random variable
+   */
+  public NormalDistribution(int nDim, SimpleMatrix mean, SimpleMatrix covariance){
     //assign member variables
     super(nDim);
+    this.mean = mean;
     this.covarianceChol = Global.cholesky(covariance);
-    //copy the memory in this,covarianceChol to covarianceCholInverse
-    SimpleMatrix covarianceCholInverse = new SimpleMatrix(this.covarianceChol);
-    //inverse covarianceCholInverse
-    TriangularSolver_DDRM.invertLower(covarianceCholInverse.getDDRM().data, this.getNDim());
-    //do the operation L^(T-1) * L^(-1) * x
-    this.covarianceInverse = new SimpleMatrix(this.nDim, this.nDim);
-    CommonOps_DDRM.multInner(covarianceCholInverse.getDDRM(), this.covarianceInverse.getDDRM());
   }
   
   /**IMPLEMENT: GET PDF
@@ -57,7 +65,7 @@ public class NormalDistribution extends TargetDistribution{
    */
   @Override
   public double getPotential(SimpleMatrix x) {
-    SimpleMatrix z = this.covarianceChol.solve(x);
+    SimpleMatrix z = this.covarianceChol.solve(x.minus(this.mean));
     return 0.5 * z.dot(z);
   }
   
@@ -68,7 +76,14 @@ public class NormalDistribution extends TargetDistribution{
    */
   @Override
   public SimpleMatrix getDPotential(SimpleMatrix x) {
-    return this.covarianceInverse.mult(x);
+    //copy the memory in this,covarianceChol to covarianceCholInverse
+    SimpleMatrix covarianceCholInverse = new SimpleMatrix(this.covarianceChol);
+    //inverse covarianceCholInverse
+    TriangularSolver_DDRM.invertLower(covarianceCholInverse.getDDRM().data, this.getNDim());
+    //do the operation L^(T-1) * L^(-1) * x
+    SimpleMatrix covariance = new SimpleMatrix(this.nDim, this.nDim);
+    CommonOps_DDRM.multInner(covarianceCholInverse.getDDRM(), covariance.getDDRM());
+    return covariance.mult(x.minus(this.mean));
     
   }
   

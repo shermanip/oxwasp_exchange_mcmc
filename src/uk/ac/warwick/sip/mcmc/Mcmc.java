@@ -54,6 +54,9 @@ public abstract class Mcmc {
 
   protected MersenneTwister rng; //random number generator
   
+  protected boolean isAccepted = true; //indicate if the latest step was an accept step
+  protected SimpleMatrix rejectedSample; //if the latest step was a rejection, this is the value
+  
   /**CONSTRUCTOR
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
@@ -100,6 +103,18 @@ public abstract class Mcmc {
       this.acceptanceArray[i] = chain.acceptanceArray[i];
     }
     
+  }
+  
+  /**METHOD: STEP
+   * Take a MCMC step (no thinning) and save the new sample, ready for the next step
+   */
+  public void step() {
+  //instantiate column vector for the current value of the chain
+    SimpleMatrix x = this.chainArray.extractVector(true, this.nSample - 1);
+    CommonOps_DDRM.transpose(x.getDDRM());
+    this.step(x);
+    //save x to the chain array and increment the number of samples
+    this.setCurrentStep(x);
   }
   
   /**METHOD: STEP
@@ -152,6 +167,7 @@ public abstract class Mcmc {
    * Given two vectors, current and proposal
    * With probability acceptProb, the values of propsoal is copied over to current and nAccept
    * increments, otherwise nothing
+   * If rejected, save the rejected sample
    * @param acceptProb Acceptance probability
    * @param current Column vector containing the value of the chain now, to be modified
    * @param proposal Column vector of the proposal step, not modified
@@ -163,6 +179,12 @@ public abstract class Mcmc {
       current.set(proposal);
       //increment the number of acceptance steps
       this.nAccept++;
+      //indicate this is an acceptance step
+      this.isAccepted = true;
+    } else {
+      this.isAccepted = false;
+      //save the value of the rejected step
+      this.rejectedSample = proposal;
     }
   }
   
@@ -488,6 +510,27 @@ public abstract class Mcmc {
    */
   public double [] getPosteriorCovariance() {
     return this.posteriorCovariance.getDDRM().getData();
+  }
+  
+  /**METHOD: GET N STEP
+   * @return the number of steps taken
+   */
+  public int getNStep() {
+    return this.nStep;
+  }
+  
+  /**METHOD: GET IS ACCEPTED
+   * @return boolean if the last step was an accept step or not
+   */
+  public boolean getIsAccepted() {
+    return this.isAccepted;
+  }
+  
+  /**METHOD: GET REJECTED SAMPLE
+   * @return the latest rejected sample
+   */
+  public double [] getRejectedSample() {
+    return this.rejectedSample.getDDRM().getData();
   }
   
 }

@@ -76,4 +76,12 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     this.acceptStep(acceptProb, x, y); //x can be modified here
   }
   
+  /**METHOD: SET PROPOSAL COVARIANCE
+   * Set the proposal covariance
+   * @param proposalCovariance proposal covariance use in homogeneous steps
+   */
+  public void setProposalCovariance(SimpleMatrix proposalCovariance) {
+    this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
+  }
+  
 }
