@@ -2,49 +2,52 @@ package uk.ac.warwick.sip.mcmcProcessing;
 
 import org.apache.commons.math3.random.MersenneTwister;
 
+import g4p_controls.G4P;
+import g4p_controls.GEvent;
+import g4p_controls.GSlider;
+import g4p_controls.GValueControl;
 import processing.core.PApplet;
 import uk.ac.warwick.sip.mcmc.TargetDistribution;
 
 public class HamiltonianMonteCarlo extends McmcApplet{
   
-  
-  protected uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo chain;
   protected TargetDistribution target;
-  protected int nLeapFrog;
-  
+  protected int nLeapFrog = 10;
+  protected GSlider nLeapFrogSlider;
   
   @Override
   public void setup() {
-    this.target = this.getNormalDistribution();
-    this.nLeapFrog = 10;
+    super.setup();
+    target = this.getNormalDistribution();
+    this.nLeapFrogSlider = new GSlider(this, 110, 150, 300, 150, 30);
+    this.nLeapFrogSlider.setRotation(HALF_PI);
+    this.nLeapFrogSlider.setShowValue(true);
+    this.nLeapFrogSlider.setLimits(10, 1,
+        uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo.maxNLeapFrog);
+    this.nLeapFrogSlider.setTextOrientation(-1);
+    this.nLeapFrogSlider.setNbrTicks(11);
+    this.nLeapFrogSlider.setLocalColor(2,-1);
+    this.nLeapFrogSlider.setShowTicks(true);
+    this.nLeapFrogSlider.setNumberFormat(G4P.INTEGER, 0);
+
   }
   
   @Override
   protected void drawMcmc() {
     
-    
-    this.stroke(0,255,0);
-    this.fill(0,255,0);
-    float x1, x2, y1, y2;
-    double [] chainArray = this.chain.getChain();
-    x1 = (float) chainArray[0];
-    y1 = (float) chainArray[1];
-    this.ellipse(x1, y1 , CIRCLE_SIZE, CIRCLE_SIZE);
-    for (int i=1; i<this.chain.getNStep(); i++) {
-      x2 = (float) chainArray[i*2];
-      y2 = (float) chainArray[i*2+1];
-      this.ellipse(x2, y2 , CIRCLE_SIZE, CIRCLE_SIZE);
-      this.line(x1, y1, x2, y2);
-      x1 = x2;
-      y1 = y2;
-    }
+    double [] secondLastSample = this.drawAllButLastSamples();
+    float x1, y1, x2, y2;
+    x1 = (float) secondLastSample[0];
+    y1 = (float) secondLastSample[1];
     if (this.chain.getIsAccepted()) {
       
       this.stroke(255,255,0);
       this.fill(255,255,0);
       double [] leapFrogPosition;
-      for (int i=0; i<this.nLeapFrog; i++) {
-        leapFrogPosition = this.chain.getLeapFrogPositions(i);
+      uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo chain = 
+          (uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo) this.chain;
+      for (int i=0; i<this.nLeapFrogSlider.getValueI(); i++) {
+        leapFrogPosition = chain.getLeapFrogPositions(i);
         x2 = (float) leapFrogPosition[0];
         y2 = (float) leapFrogPosition[1];
         this.ellipse(x2, y2 , CIRCLE_SIZE, CIRCLE_SIZE);
@@ -56,53 +59,53 @@ public class HamiltonianMonteCarlo extends McmcApplet{
   }
   
   @Override
-  protected void takeStep() {
-    this.chain.step();
-  }
-  
-  @Override
   protected void changeProperty() {
-    this.chain.setNLeapFrog(this.nLeapFrog);
+    uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo chain = 
+        (uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo) this.chain;
+    chain.setNLeapFrog(this.nLeapFrog);
   }
   
   @Override
   public void mouseReleased() {
-    double [] mousePosition = new double [2];
-    mousePosition[0] = (double) this.mouseX;
-    mousePosition[1] = (double) this.mouseY;
-    
-    if (this.mouseButton == PApplet.LEFT) {
-      MersenneTwister rng = new MersenneTwister(this.millis());
-      this.chain = new uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo(this.target
-          , this.chainLength, this.getProposalCovariance(), SIZE_LEAP_FROG
-          , this.nLeapFrog, rng);
-      this.chain.setInitialValue(mousePosition);
-      this.isInit = true;
-    }
-  }
-  
-  @Override
-  protected void checkChangeProperty() {
-    if (this.isInit) {
-      if (this.keyCode == PApplet.UP) {
-        if (this.nLeapFrog < this.chain.getMaxNLeapFrog()) {
-          this.nLeapFrog++;
-          this.changeProperty();
-        }
-      } else if (this.keyCode == PApplet.DOWN) {
-        if (this.nLeapFrog != 1) {
-          this.nLeapFrog--;
-          this.changeProperty();
-        }
-      } else if (this.key == 'm') {
-        this.nLeapFrog = 100;
-        this.changeProperty();
+    if (!this.isMouseClickOnGui) {
+      if (!this.isMouseOnGui()) {
+        double [] mousePosition = new double [2];
+        mousePosition[0] = (double) this.mouseX;
+        mousePosition[1] = (double) this.mouseY;
+        
+        MersenneTwister rng = new MersenneTwister(this.millis());
+        this.chain = new uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo(this.target
+            , this.chainLength, this.getProposalCovariance(), SIZE_LEAP_FROG
+            , this.nLeapFrogSlider.getValueI(), rng);
+        this.chain.setInitialValue(mousePosition);
+        this.isInit = true;
       }
     }
+    super.mouseReleased();
+  }
+  
+  protected boolean isMouseOnGui() {
+    boolean isMouseOnGui = super.isMouseOnGui();
+    if (this.nLeapFrogSlider.isOver(this.mouseX, this.mouseY)) {
+      isMouseOnGui = true;
+    }
+    return isMouseOnGui;
   }
   
   public static void main(String[] args) {
     PApplet.main("uk.ac.warwick.sip.mcmcProcessing.HamiltonianMonteCarlo");
+  }
+  
+  public void handleSliderEvents(GValueControl slider, GEvent event) {
+    if (slider == this.nLeapFrogSlider) {
+      if (event == GEvent.VALUE_STEADY) {
+        if (this.isInit) {
+          uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo chain = 
+              (uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo) this.chain;
+          chain.setNLeapFrog(this.nLeapFrogSlider.getValueI());
+        }
+      }
+    }
   }
   
 }
