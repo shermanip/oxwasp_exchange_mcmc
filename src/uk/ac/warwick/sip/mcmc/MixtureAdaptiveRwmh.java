@@ -54,23 +54,32 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
   @Override
   public void adaptiveStep(SimpleMatrix currentStep) {
     
-    //with this.probabilitySaftey chance, use the saftey proposal covariance
-    if (this.rng.nextDouble()< this.probabilitySafety) {
-      this.proposalCovarianceChol = this.safteyProposalCovarianceChol;
-    } else {
-      //get the chain covariance and scale it so that it is optimial for targetting Normal
-      this.proposalCovarianceChol = new SimpleMatrix(this.chainCovariance);
-      CommonOps_DDRM.scale(Math.pow(2.38, 2)/this.getNDim(), this.proposalCovarianceChol.getDDRM());
-      //Global.cholesky will return a null if the decomposition is unsuccessful
-      //use the default proposal if a null is caught
-      this.proposalCovarianceChol = Global.cholesky(this.proposalCovarianceChol);
-      if (this.proposalCovarianceChol == null) {
-        this.proposalCovarianceChol = this.safteyProposalCovarianceChol;
-      }
+    //get the chain covariance and scale it so that it is optimial for targetting Normal
+    SimpleMatrix newProposalCovarianceChol;
+    newProposalCovarianceChol = new SimpleMatrix(this.chainCovariance);
+    CommonOps_DDRM.scale(Math.pow(2.38, 2)/this.getNDim(), newProposalCovarianceChol.getDDRM());
+    //Global.cholesky will return a null if the decomposition is unsuccessful
+    //use the default proposal if a null is caught
+    newProposalCovarianceChol = Global.cholesky(newProposalCovarianceChol);
+    if (newProposalCovarianceChol == null) {
+      newProposalCovarianceChol = this.safteyProposalCovarianceChol;
     }
     
+    //with this.probabilitySaftey chance, use the saftey proposal covariance
+    //else use the new proposal
+    boolean isSaftey = this.rng.nextDouble()< this.probabilitySafety;
+    if (isSaftey) {
+      this.proposalCovarianceChol = this.safteyProposalCovarianceChol;
+    }
+    else {
+      this.proposalCovarianceChol = newProposalCovarianceChol;
+    }
     //do a Metropolis-Hastings step with this proposal covariance
     this.metropolisHastingsStep(currentStep);
+    //save the new proposal
+    if (isSaftey) {
+      this.proposalCovarianceChol = newProposalCovarianceChol;
+    }
   }
   
   /**METHOD: SET PROBABILITY SAFTEY

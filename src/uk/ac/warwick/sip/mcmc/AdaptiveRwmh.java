@@ -16,6 +16,7 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
   protected int nStepTillAdaptive; //number of regular MH steps till use adaptive method
   //small constant to be added to the diagional of the proposal covairnace in adaptive steps
   private double e;
+  protected boolean isAdaptive = true; //user selected, if the chain is adaptive or not
   
   /**CONSTRUCTOR
    * Does random walk Metropolis Hastings with adaptive proposal covariance
@@ -46,6 +47,14 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     this.e = chain.e;
   }
   
+  /**METHOD: SET IS ADAPTIVE
+   * Set if the chain is adaptive or not
+   * @param isAdaptive
+   */
+  public void setIsAdaptive(boolean isAdaptive) {
+    this.isAdaptive = isAdaptive;
+  }
+  
   /**OVERRIDE: STEP
    * Do a Metropolis-Hastings step, the chain is homogeneous for nStepTillAdaptive steps
    * Afterwards the proposal covariance will change, the step will be taken using
@@ -57,7 +66,12 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     if (this.nStep < this.nStepTillAdaptive){
       this.metropolisHastingsStep(currentPosition); //homogeneous Metropolis-Hastings step
     } else {
-      this.adaptiveStep(currentPosition); //adaptive Metropolis-Hastings step
+      //do adaptive or non-adaptive step depending on isAdaptive
+      if (this.isAdaptive) {
+        this.adaptiveStep(currentPosition); //adaptive Metropolis-Hastings step
+      } else {
+        this.metropolisHastingsStep(currentPosition);
+      }
     }
     this.updateStatistics(currentPosition);
   }
