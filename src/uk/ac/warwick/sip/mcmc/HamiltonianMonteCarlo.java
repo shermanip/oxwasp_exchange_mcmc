@@ -25,7 +25,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
   
   //array of vectors containing position vector of each leapfrog step
   protected SimpleMatrix [] leapFrogPositions;
-  static public int maxNLeapFrog = 100; //maximum number of leap frog steps
+  static public final int MAX_N_LEAP_FROG = 100; //maximum number of leap frog steps
   
   /**CONSTRUCTOR
    * Sampler which uses Hamiltonian dynamics
@@ -52,7 +52,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     CommonOps_DDRM.multInner(massCholInverse.getDDRM(), massInverse.getDDRM());
     
     //fill leapFrogPositions with null
-    this.leapFrogPositions = new SimpleMatrix [maxNLeapFrog];
+    this.leapFrogPositions = new SimpleMatrix [MAX_N_LEAP_FROG];
     this.isAccepted = false;
   }
   
@@ -224,13 +224,6 @@ public class HamiltonianMonteCarlo extends Mcmc {
     if (this.nStep+1 < this.chainLength) {
       this.nLeapFrog = nLeapFrog;
     }
-  }
-  
-  /**METHOD: GET MAX N LEAP FROG
-   * @return maximum number of leap frog steps possible
-   */
-  public int getMaxNLeapFrog() {
-    return maxNLeapFrog;
   }
   
 }
