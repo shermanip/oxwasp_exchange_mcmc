@@ -109,12 +109,15 @@ public abstract class Mcmc {
    * Take a MCMC step (no thinning) and save the new sample, ready for the next step
    */
   public void step() {
-  //instantiate column vector for the current value of the chain
-    SimpleMatrix x = this.chainArray.extractVector(true, this.nSample - 1);
-    CommonOps_DDRM.transpose(x.getDDRM());
-    this.step(x);
-    //save x to the chain array and increment the number of samples
-    this.setCurrentStep(x);
+    //only take a step the chain is not long enough
+    if (this.nSample < this.chainLength) {
+      //instantiate column vector for the current value of the chain
+      SimpleMatrix x = this.chainArray.extractVector(true, this.nSample - 1);
+      CommonOps_DDRM.transpose(x.getDDRM());
+      this.step(x);
+      //save x to the chain array and increment the number of samples
+      this.setCurrentStep(x);
+    }
   }
   
   /**METHOD: STEP
