@@ -56,7 +56,7 @@ public abstract class McmcApplet extends PApplet{
   public void setup() {
     this.pauseButton = new GButton(this, 10,10,50,50,"pause");
     this.stepButton = new GButton(this, 10,80,50,50,"step");
-    this.quitButton = new GButton(this, 10, this.height-60, 50, 50, "quit");
+    this.quitButton = new GButton(this, 10, this.height-80, 50, 50, "quit");
   }
   
   /**OVERRIDE: DRAW
