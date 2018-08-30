@@ -237,15 +237,15 @@ public abstract class Mcmc {
   }
   
   /**METHOD: GET AUTOCORRELATION FUNCTION
-   * Calculates the sample autocorrelation function for lags 0 to nLag
+   * Calculates the sample autocorrelation function for lags 0 to nLag-1
    * Results are returned in a double []
    * @param nLag The maximum lag to be obtained
-   * @return The acf at lag 0, 1, 2, ..., nLag
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
    */
   public double [] getAcf(int nDim, int nLag) {
     
-    //declare array for the acf, for lag 0,1,2,...,nLag
-    double [] acf = new double[nLag+1];
+    //declare array for the acf, for lag 0,1,2,...,nLag-1
+    double [] acf = new double[nLag];
     //retrieve the chain
     SimpleMatrix chain = this.chainArray.extractVector(false, nDim);
     
@@ -257,7 +257,7 @@ public abstract class Mcmc {
       acf[i] = this.getSxxlag(chain, i);
     }
     //normalise the acf
-    for (int i=1; i<=nLag; i++) {
+    for (int i=1; i<nLag; i++) {
       acf[i] /= acf[0];
     }
     acf[0] = 1.0;
