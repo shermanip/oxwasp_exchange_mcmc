@@ -276,44 +276,27 @@ public class RunVoEqui {
 			dump("Now starting MCMC");
 			
 			int sampleCount=10000;
+			int dimOfInterest = 3;
 			
 			//instantiate objects to be pass onto the mcmc object
 			TargetDistribution target = new GraphDistribution(m.graph); //contains the pdf
 			MersenneTwister rng = new MersenneTwister(-280845742); //random number generator
 			//set the proposal covariance, in adaptive methods this is the inital proposal
 			SimpleMatrix proposalCovariance = SimpleMatrix.identity(target.getNDim())
-					.scale(0.000001/((double)target.getNDim()));
+					.scale(0.00000001/((double)target.getNDim()));
 			
 			//instantiate the chain and set the initial values
 			Mcmc chain = new MixtureAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
-			
 			chain.setInitialValue(m.graph.getFreeParameters());
 			chain.run();
-			
 			chain.calculatePosteriorStatistics(0);
 			SimpleMatrix error = new SimpleMatrix(chain.getNDim(), 1, true, chain.getDifferenceLnError());
 			error.print();
 			
 			
-			double [] currentValues = new double[sampleCount];
-			double [] chainArray = chain.getChain();
-			double [] chainPosition = new double[chain.getNDim()];
-			
-			for (int iSample = 0; iSample < sampleCount; iSample++) {
-				
-				for (int iDim=0; iDim<chain.getNDim(); iDim++) {
-					chainPosition[iDim] = chainArray[iDim + chain.getNDim()*iSample];
-				}
-				
-				m.graph.setFreeParameters(chainPosition);
-				// convert from kA to MA
-				currentValues[iSample] = m.currents.magneticModel.getTotalPlasmaCurrent()/1000;;
-				
-			}
-			
 			JyPlot tracePlot = new JyPlot();
 			tracePlot.figure();
-			tracePlot.plot(currentValues);
+			tracePlot.plot(chain.getChain(dimOfInterest));
 			tracePlot.show();
 			tracePlot.exec();
 			
@@ -330,7 +313,7 @@ public class RunVoEqui {
 			}
 			JyPlot autoCorrelationPlot = new JyPlot();
 			autoCorrelationPlot.figure();
-			autoCorrelationPlot.stem(lag, chain.getAcf(0, nLag));
+			autoCorrelationPlot.stem(lag, chain.getAcf(dimOfInterest, nLag));
 			autoCorrelationPlot.hlines(1/Math.sqrt(sampleCount), 0, nLag, "r");
 			autoCorrelationPlot.hlines(-1/Math.sqrt(sampleCount), 0, nLag, "r");
 			autoCorrelationPlot.show();
