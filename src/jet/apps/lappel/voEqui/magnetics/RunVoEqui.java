@@ -294,13 +294,8 @@ public class RunVoEqui {
 			SimpleMatrix error = new SimpleMatrix(chain.getNDim(), 1, true, chain.getDifferenceLnError());
 			error.print();
 			
-			JyPlot tracePlot = new JyPlot();
-			tracePlot.figure();
 			
-			double [] currentValuesI;
-			double [][] currentValues = new double[7][sampleCount];
-			
-			
+			double [] currentValues = new double[sampleCount];
 			double [] chainArray = chain.getChain();
 			double [] chainPosition = new double[chain.getNDim()];
 			
@@ -312,29 +307,35 @@ public class RunVoEqui {
 				
 				m.graph.setFreeParameters(chainPosition);
 				// convert from kA to MA
-				currentValuesI = m.currents.jtor.plasmaBeamCurrentDensities.getFullValue();
-				
-				for (int i=0; i<currentValuesI.length; i++) {
-					currentValues[i][iSample] = currentValuesI[i]/1000.0;
-				}
+				currentValues[iSample] = m.currents.magneticModel.getTotalPlasmaCurrent()/1000;;
 				
 			}
-			for (int i=0; i<currentValues.length; i++) {
-				tracePlot.subplot(7,1,i+1);
-				tracePlot.plot(currentValues[i]);
-			}
 			
-			
+			JyPlot tracePlot = new JyPlot();
+			tracePlot.figure();
+			tracePlot.plot(currentValues);
 			tracePlot.show();
 			tracePlot.exec();
 			
 			JyPlot acceptancePlot = new JyPlot();
 			acceptancePlot.figure();
 			acceptancePlot.plot(chain.getAcceptanceRate());
-			
 			acceptancePlot.show();
 			acceptancePlot.exec();
 			
+			int nLag = 100;
+			double [] lag = new double[nLag];
+			for (int i=0; i<nLag; i++) {
+				lag[i] = (double)(i);
+			}
+			JyPlot autoCorrelationPlot = new JyPlot();
+			autoCorrelationPlot.figure();
+			autoCorrelationPlot.stem(lag, chain.getAcf(0, nLag));
+			autoCorrelationPlot.hlines(1/Math.sqrt(sampleCount), 0, nLag, "r");
+			autoCorrelationPlot.hlines(-1/Math.sqrt(sampleCount), 0, nLag, "r");
+			autoCorrelationPlot.show();
+			autoCorrelationPlot.exec();
+			System.out.println("Number of dimensions = "+chain.getNDim());
 		}
 	}
 	private static void plotMcmc(long sampleCount,String outputFolder,long timeValLong,double[] sampleVec) {
