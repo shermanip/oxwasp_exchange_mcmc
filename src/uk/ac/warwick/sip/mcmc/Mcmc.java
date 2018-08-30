@@ -253,7 +253,7 @@ public abstract class Mcmc {
     double mean = chain.elementSum() / ((double) chain.getNumElements());
     chain = chain.minus(mean);
     //work out the S_x_xLag for all lags, see method getSxxlag
-    for (int i=0; i<=nLag; i++) {
+    for (int i=0; i<nLag; i++) {
       acf[i] = this.getSxxlag(chain, i);
     }
     //normalise the acf
