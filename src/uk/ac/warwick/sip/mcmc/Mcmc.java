@@ -40,6 +40,8 @@ public abstract class Mcmc {
   protected SimpleMatrix monteCarloError;
   //covariance of the chain, after burn in
   protected SimpleMatrix posteriorCovariance;
+  //the values of the batches when working out the monte carlo error
+  protected SimpleMatrix batchArray;
   
   //array of acceptance rate at each step
   protected double [] acceptanceArray;
@@ -239,15 +241,24 @@ public abstract class Mcmc {
   /**METHOD: GET AUTOCORRELATION FUNCTION
    * Calculates the sample autocorrelation function for lags 0 to nLag-1
    * Results are returned in a double []
+   * @param nDim The dimension to work out the autocorrelation for
    * @param nLag The maximum lag to be obtained
    * @return The acf at lag 0, 1, 2, ..., nLag-1
    */
   public double [] getAcf(int nDim, int nLag) {
-    
-    //declare array for the acf, for lag 0,1,2,...,nLag-1
+    return this.getAcf(this.chainArray.extractVector(false, nDim), nLag);
+  }
+  
+  /**METHOD: GET AUTOCORRELATION FUNCTION
+   * Calculates the sample autocorrelation function for lags 0 to nLag-1
+   * Results are returned in a double []
+   * @param chain Vector containing values
+   * @param nLag The maximum lag to be obtained
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
+   */
+  protected double [] getAcf(SimpleMatrix chain, int nLag) {
+  //declare array for the acf, for lag 0,1,2,...,nLag-1
     double [] acf = new double[nLag];
-    //retrieve the chain
-    SimpleMatrix chain = this.chainArray.extractVector(false, nDim);
     
     //work out the sample mean and centre the chain at the sample mean
     double mean = chain.elementSum() / ((double) chain.getNumElements());
@@ -263,7 +274,6 @@ public abstract class Mcmc {
     acf[0] = 1.0;
     
     return acf;
-    
   }
   
   /**METHOD: GET S_X_XLAG
@@ -333,7 +343,7 @@ public abstract class Mcmc {
       int nBatch = (int) Math.round(Math.sqrt((double) n));
       //declare matrices to store the following
       SimpleMatrix batchLength = new SimpleMatrix(nBatch,1); //the length of each batch
-      SimpleMatrix batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
+      this.batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
       
       //declare variables for pointing to specific parts of the chain in order to obtain the batch
       //samples
@@ -352,18 +362,22 @@ public abstract class Mcmc {
         //get the samples from this batch
         SimpleMatrix batchVector = burntChain.extractMatrix(indexStart, indexEnd, 0, 1);
         //work out the sample mean and save it
-        batchArray.set(iBatch, batchVector.elementSum()/ batchLength.get(iBatch) );
+        this.batchArray.set(iBatch, batchVector.elementSum()/ batchLength.get(iBatch) );
         //set the pointer for the next batch
         indexStart = indexEnd;
       }
       
       //calculate the monte carlo error and save it
-      double monteCarloError_i = batchArray.minus(this.posteriorExpectation.get(i)).elementPower(2)
+      double monteCarloError_i = this.batchArray.minus(this.posteriorExpectation.get(i)).elementPower(2)
           .elementMult(batchLength).elementSum();
       monteCarloError_i /= ((double)(nBatch * n));
       monteCarloError_i = Math.sqrt(monteCarloError_i);
       this.monteCarloError.set(i, monteCarloError_i);
     }
+  }
+  
+  public double [] getBatchAcf(int nLag) {
+    return this.getAcf(this.batchArray, nLag);
   }
   
   /**METHOD: CALCULATE POSTERIOR COVARIANCE
