@@ -2,45 +2,50 @@ package uk.ac.warwick.sip.mcmc;
 
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.dense.row.CommonOps_DDRM;
+import org.ejml.dense.row.decomposition.TriangularSolver_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
 /**CLASS: HAMILTONIAN MONTE CARLO
- * Samplier which uses Hamiltonian dynamics.
- * At a step, the momentum vector is proposed using a Gaussian random variable.
+ * Sampler which uses Hamiltonian dynamics
+ * Reference: Neal, R.M. (2011)
+ * At a step, the momentum vector is proposed using a Gaussian random variable
  * The particle then moves about obeying Hamiltonian dynamics, this is done using leap frog steps
  * The resulting position of the particle is accept/rejected using the cannonical distribution
- * 
- * Use the method run() to run the chain
  */
 public class HamiltonianMonteCarlo extends Mcmc {
   
-  //column vector, squared root of the diagonal of the mass matrix, for each dimension
-  protected SimpleMatrix momentumScale;
-  //column vector, inverse of the diagonal of the mass matrix, for each dimension
-  protected SimpleMatrix inverseMass;
+  //cholesky decomposition of the mass matrix
+  protected SimpleMatrix massChol;
+  //inverse of the mass matrix
+  protected SimpleMatrix massInverse;
   //size of the leap frog step
-  protected double sizeLeapFrog; 
-  protected int nLeapFrog; //number of leap frog step for each mcmc step
+  protected double sizeLeapFrog;
+  //number of leap frog step for each mcmc step
+  protected int nLeapFrog;
   
   /**CONSTRUCTOR
+   * Sampler which uses Hamiltonian dynamics
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
-   * @param massVector column vector, containing diagonal element of the mass matrix 
+   * @param massMatrix mass matrix, determines the variance of the momentum
    * @param sizeLeapFrog size of the leap frog step
    * @param nLeapFrog number of leap frog step for each mcmc step
    * @param rng Random number generator to generate all the random numbers
    */
   public HamiltonianMonteCarlo(TargetDistribution target, int chainLength,
-      SimpleMatrix massVector, double sizeLeapFrog, int nLeapFrog, MersenneTwister rng) {
+      SimpleMatrix massMatrix, double sizeLeapFrog, int nLeapFrog, MersenneTwister rng) {
     //assign member variables
     super(target, chainLength, rng);
-    this.momentumScale = new SimpleMatrix(this.getNDim(), 1);
-    this.inverseMass = new SimpleMatrix(massVector);
     this.sizeLeapFrog = sizeLeapFrog;
     this.nLeapFrog = nLeapFrog;
-    //assign the functions of the elements of the mass matrix
-    CommonOps_DDRM.elementPower(massVector.getDDRM(), 0.5, this.momentumScale.getDDRM());
-    CommonOps_DDRM.divide(1, this.inverseMass.getDDRM());
+    //get the cholesky of the mass matrix, as well as the inverse
+    this.massChol = Global.cholesky(massMatrix);
+    //calculate the inverse of the mass matrix, this is done using the cholesky decomposition
+    SimpleMatrix massCholInverse = new SimpleMatrix(massChol);
+    //invert the cholesky decomposition to work out the inverse mass
+    TriangularSolver_DDRM.invertLower(massCholInverse.getDDRM().getData(), this.getNDim());
+    this.massInverse = new SimpleMatrix(this.getNDim(), this.getNDim());
+    CommonOps_DDRM.multInner(massCholInverse.getDDRM(), massInverse.getDDRM());
   }
   
   /**CONSTRUCTOR
@@ -53,8 +58,8 @@ public class HamiltonianMonteCarlo extends Mcmc {
     //call superconstructor to do a shallow copy and extend the chain
     //also shallow copy the chain's member variables
     super(chain, nMoreSteps);
-    this.momentumScale = chain.momentumScale;
-    this.inverseMass = chain.inverseMass;
+    this.massChol = chain.massChol;
+    this.massInverse = chain.massInverse;
     this.sizeLeapFrog = chain.sizeLeapFrog; 
     this.nLeapFrog = chain.nLeapFrog;
   }
@@ -81,8 +86,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     
     //get the canonical distributions given the hamiltonians
     double canonicalCurrent = Math.exp(-this.getHamiltonian(position, momentum));
-    double canonicalProposal = Math.exp(-this.getHamiltonian(positionProposal
-        ,momentumProposal));
+    double canonicalProposal = Math.exp(-this.getHamiltonian(positionProposal, momentumProposal));
     
     //do acceptance step
     double acceptProb = canonicalProposal/canonicalCurrent;
@@ -93,9 +97,9 @@ public class HamiltonianMonteCarlo extends Mcmc {
   }
   
   /**METHOD: GET MOMENTUM
-   * //generate a random momentum vector
-   * //it is generated using Normal with covariance diag(momentumScale)
-   * //random Normal uses the rng
+   * generate a random momentum vector
+   * it is generated using Normal with mass covariance
+   * random Normal uses the rng
    * @return Column vector, random momentum
    */
   protected SimpleMatrix getMomentum() {
@@ -104,8 +108,8 @@ public class HamiltonianMonteCarlo extends Mcmc {
     for (int i=0; i<this.getNDim(); i++) {
       momentum.set(i, this.rng.nextGaussian());
     }
-    //scale the N(0,1) by the momentum scale
-    CommonOps_DDRM.elementMult(momentum.getDDRM(), this.momentumScale.getDDRM());
+    //scale the N(0,1) by the mass matrix
+    momentum = this.massChol.mult(momentum);
     return momentum;
   }
   
@@ -153,11 +157,10 @@ public class HamiltonianMonteCarlo extends Mcmc {
    * @param momentumProposal Column vector, proposed momentum, not modified
    */
   protected void positionStep(SimpleMatrix positionProposal, SimpleMatrix momentumProposal) {
-    SimpleMatrix positionChange = momentumProposal.elementMult(this.inverseMass);
+    SimpleMatrix positionChange = this.massInverse.mult(momentumProposal);
     CommonOps_DDRM.scale(this.sizeLeapFrog, positionChange.getDDRM());
     CommonOps_DDRM.addEquals(positionProposal.getDDRM(), positionChange.getDDRM());
   }
-  
   
   /**METHOD: GET HAMILTONIAN
    * Returns the Hamiltonian (or energy of the system) given the position and momentum
@@ -168,8 +171,8 @@ public class HamiltonianMonteCarlo extends Mcmc {
    */
   protected double getHamiltonian(SimpleMatrix position, SimpleMatrix momentum) {
     //evaluate the kinetic energy
-    SimpleMatrix inverseMassTimesMomentum = this.inverseMass.elementMult(momentum);
-    double kineticEnergy = 0.5 * momentum.dot(inverseMassTimesMomentum);
+    SimpleMatrix z = this.massChol.solve(momentum); //calculates L^(-1)*momentum
+    double kineticEnergy = 0.5 * z.dot(z);
     //evaluate the potential
     double potentialEnergy = this.target.getPotential(position);
     //add all of the energies

@@ -3,6 +3,7 @@ package uk.ac.warwick.sip.mcmc;
 import javax.swing.JFrame;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.interfaces.decomposition.CholeskyDecomposition_F64;
 import org.ejml.simple.SimpleMatrix;
@@ -11,13 +12,13 @@ import org.math.plot.Plot2DPanel;
 public class Global {
   
   public static void main(String[] args) {
-    int nDim = 32;
+    int nDim = 16;
     int chainLength = 10000;
     MersenneTwister rng = new MersenneTwister(-280845742);
     SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
-    SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(2.38, 2)/((double)nDim));
-    SimpleMatrix massVector = new SimpleMatrix(nDim,1);
-    massVector = massVector.plus(1.0);
+    SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(0.001, 2)/((double)nDim));
+    SimpleMatrix massMatrix = SimpleMatrix.identity(nDim);
+    massMatrix = massMatrix.scale(1.0);
     int nLeapFrog = 100;
     double sizeLeapFrog = 0.5;
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
@@ -26,13 +27,13 @@ public class Global {
     int nChain = 1;
     Mcmc [] chainArray = new Mcmc [nChain];
     SimpleMatrix initialPositionScale = SimpleMatrix.identity(nDim);
-    initialPositionScale = initialPositionScale.scale(5.0);
+    initialPositionScale = initialPositionScale.scale(0.0);
     
     for (int iChain=0; iChain<nChain; iChain++) {
-      chainArray[iChain] =  new RandomWalkMetropolisHastings(target, chainLength, proposalCovariance, rng) ;
-      //chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massVector, sizeLeapFrog, nLeapFrog, rng) ;
-      //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massVector, sizeLeapFrog, rng) ;
-      //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massVector, nAdaptive, rng) ;
+      //chainArray[iChain] =  new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng) ;
+      chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massMatrix, sizeLeapFrog, nLeapFrog, rng) ;
+      //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massMatrix, sizeLeapFrog, rng) ;
+      //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massMatrix, nAdaptive, rng) ;
       //chainArray[iChain].setNThin(50);
       SimpleMatrix initial = new SimpleMatrix(nDim, 1);
       for (int i=0; i<nDim; i++) {
@@ -55,6 +56,16 @@ public class Global {
       frame.setContentPane(tracePlot);
       frame.setSize(800, 600);
       frame.setVisible(true);
+      
+      Plot2DPanel acceptPlot = new Plot2DPanel();
+      double [] acceptArray = chainArray[iChain].getAcceptanceRate();
+      acceptPlot.addLinePlot("accept",acceptArray);
+      
+       // put the PlotPanel in a JFrame, as a JPanel
+      JFrame acceptFrame = new JFrame("a plot panel");
+      acceptFrame.setContentPane(acceptPlot);
+      acceptFrame.setSize(800, 600);
+      acceptFrame.setVisible(true);
     }
     
     
@@ -67,6 +78,9 @@ public class Global {
    */
   public static SimpleMatrix cholesky(SimpleMatrix x) {
     x = new SimpleMatrix(x);
+    if (!MatrixFeatures_DDRM.isSymmetric(x.getDDRM())) {
+      return null;
+    }
     CholeskyDecomposition_F64<DMatrixRMaj> chol = DecompositionFactory_DDRM.chol(x.numRows(),true);
     if( !chol.decompose(x.getMatrix())) {
       return null;

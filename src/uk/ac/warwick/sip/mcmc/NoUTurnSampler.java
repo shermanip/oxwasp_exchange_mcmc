@@ -4,11 +4,10 @@ import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.simple.SimpleMatrix;
 
 /**CLASS: NO U TURN SAMPLER
- * An implementation of the no u turn sampler
- * See reference Hoffman, M.D., and Gelman, A., 2014.
- * The No-U-Turn sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,
- * Journal of Machine Learning Research, 15(1), pp.1593-1623
- * An adaptive HMC which adapts the number of leap frog steps so that no u turns are made
+ * Adaptive HMC which adapts the number of leap frog steps so that no u turns are made
+ * Reference: Hoffman, M.D., and Gelman, A., (2014)
+ *  The No-U-Turn sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,
+ *  Journal of Machine Learning Research, 15(1), pp.1593-1623
  */
 public class NoUTurnSampler extends HamiltonianMonteCarlo {
   
@@ -20,19 +19,19 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
   protected double sliceVariable;
   
   /**CONSTRUCTOR
-   * See superclass HamiltonianMonteCarlo
+   * Adaptive HMC which adapts the number of leap frog steps so that no u turns are made
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
-   * @param massVector column vector, containing diagonal element of the mass matrix 
+   * @param mass matrix, determines the variance of the momentum
    * @param sizeLeapFrog size of the leap frog step
    * @param rng Random number generator for all the random numbers
    * also used to further random number generation on the fly
    */
-  public NoUTurnSampler(TargetDistribution target, int chainLength, SimpleMatrix massVector,
+  public NoUTurnSampler(TargetDistribution target, int chainLength, SimpleMatrix massMatrix,
       double sizeLeapFrog, MersenneTwister rng) {
     //set the number of leap frog steps to be one
     //this is so that calling the method leapFrog() will only take on leap frog step
-    super(target, chainLength, massVector, sizeLeapFrog, 1, rng);
+    super(target, chainLength, massMatrix, sizeLeapFrog, 1, rng);
     this.deltaMax = 1000;
   }
   
@@ -81,7 +80,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     //while no u turn has been made
     while (tree.hasNoUTurn) {
       
-      //sample Uniform({-1,1})
+      //sample Uniform({-1,1}), this controls the direction of the tree growth
       boolean isNegative = this.rng.nextBoolean();
       
       //grow the tree in the direction of isNegative
@@ -104,7 +103,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
         }
       }
       
-      //adjust member the variables of the main tree
+      //adjust member variables of the main tree, this includes tree.hasNoUTurn
       tree.bloom();
       
     }
@@ -114,13 +113,14 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       this.nAccept++;
     }
     
-    //point the current position to the new position
+    //copy the proposal position
     position.set(tree.positionProposal);
     
     //update the statistics of itself
     this.updateStatistics(position);
     
     //call the method adaptiveStep, in this class it does nothing
+    //subclasses may override adaptiveStep method
     this.adaptiveStep(tree);
     
   }
@@ -138,7 +138,8 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
   }
   
   /**METHOD: ADAPTIVE STEP
-   * Does nothing, to be overridden if an adaptive step is to be implemented
+   * Does nothing, to be overridden if an adaptive step, which depends on the tree,
+   * is to be implemented
    */
   protected void adaptiveStep(Tree tree) {
     //do nothing
@@ -177,8 +178,8 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
    * position-momentum pair. This is different from the Tree(SimpleMatrix position,
    * SimpleMatrix momentum) constructor.
    * 
-   * Source code makes use inner classes, instances are owned by (and can access)
-   * the NoUTurnSampler object
+   * Source code makes use of inner classes, instances are owned by (and can access)
+   * the parent NoUTurnSampler object
    */
   protected class Tree {
     

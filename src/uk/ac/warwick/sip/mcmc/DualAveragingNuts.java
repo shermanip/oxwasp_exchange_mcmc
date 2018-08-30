@@ -5,12 +5,11 @@ import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
 /**CLASS: DUAL AVERAGING NO U TURN SAMPLER
- * An implementation of the dual averaging no u turn sampler
- * See reference Hoffman, M.D., and Gelman, A., 2014.
- * The No-U-Turn sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,
- * Journal of Machine Learning Research, 15(1), pp.1593-1623
  * An adaptive HMC which adapts the number of leap frog steps so that no u turns are made
  * It also adapts the size of the leap frog steps, requires the number of adaptive steps
+ * Reference: Hoffman, M.D., and Gelman, A., (2014)
+ *  The No-U-Turn sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,
+ *  Journal of Machine Learning Research, 15(1), pp.1593-1623
  */
 public class DualAveragingNuts extends NoUTurnSampler {
   
@@ -27,7 +26,8 @@ public class DualAveragingNuts extends NoUTurnSampler {
   protected double currentHamiltonian; //the hamiltonian of the position-momentum pair currently
   
   /**CONSTRUCTOR
-   * See super class NoUTurnSampler
+   * An adaptive HMC which adapts the number of leap frog steps so that no u turns are made
+   * It also adapts the size of the leap frog steps, requires the number of adaptive step
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
    * @param massVector column vector, containing diagonal element of the mass matrix
@@ -138,7 +138,8 @@ public class DualAveragingNuts extends NoUTurnSampler {
   }
   
   /**OVERRIDE: ADAPTIVE STEP
-   * Calls the method adaptiveStep (Tree tree) which is implemented in this class
+   * This method is called at every MCMC step
+   * Calls the method adaptiveStep(Tree tree) which is implemented in this class
    * The superclass will pass a Tree object but with a NoUTurnSampler.Tree reference
    * Cast the NoUTurnSampler.Tree reference to a Tree reference
    * @parm tree The tree after a u turn has been made
@@ -149,7 +150,8 @@ public class DualAveragingNuts extends NoUTurnSampler {
     this.adaptiveStep(tree);
   }
   
-  /**OVERLOAD: ADAPTIVE STEP
+  /**METHOD: ADAPTIVE STEP
+   * This method is called at every MCMC step
    * In a step of HMC, which consist of multiple leap frog steps, update the member variables
    * which includes sizeLeapFrog
    * @parm tree The tree after a u turn has been made
@@ -189,6 +191,8 @@ public class DualAveragingNuts extends NoUTurnSampler {
   
   /**OVERRIDE: NEW TREE
    * See constructor in subclass Tree
+   * This is overridden so that this method returns DualAveragingNuts.Tree rather than
+   * NoUTurnSampler.Tree
    */
   @Override
   protected Tree newTree (SimpleMatrix position, SimpleMatrix momentum) {
@@ -197,6 +201,8 @@ public class DualAveragingNuts extends NoUTurnSampler {
   
   /**OVERRIDE: NEW TREE
    * See constructor in subclass Tree
+   * This is overridden so that this method returns DualAveragingNuts.Tree rather than
+   * NoUTurnSampler.Tree
    */
   @Override
   protected Tree newTree (SimpleMatrix position, SimpleMatrix momentum,

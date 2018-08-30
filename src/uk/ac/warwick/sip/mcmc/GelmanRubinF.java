@@ -9,7 +9,7 @@ import org.apache.commons.math3.stat.inference.OneWayAnova;
  * with different starting points, and looking at the mean between and within chain, similar to
  * ANOVA.
  * 
- * How to use: construct an array of RandomWalkMetropolisHastings and run each and every chain.
+ * How to use: construct an array of Mcmc and run each and every chain.
  * Then call the getGelmanRubinFArray or getGelmanRubinF to obtain the statistic.
  *
  */

@@ -6,10 +6,9 @@ import org.ejml.simple.SimpleMatrix;
 
 /**CLASS: RANDOM WALK METROPOLIS HASTINGS
  * Runs the metropolis hastings algorithm to sample a provided target distribution
- * The target distribution is provided via the constructor.
- * The chain length and a MersenneTwister is to be provided via the constructor.
- * Run the Metropolis Hastings algorithm using the step method, this will be one iteration
- * The samples are stored in the member variable chainArray as a design matrix format
+ * Reference: Metropolis, N., et.al. (1953), Hastings, W.K. (1970)
+ * This implementation does a Gaussian random walk for the proposal, with covariance defined in the
+ * member variable proposalCovarianceChol
  */
 public class RandomWalkMetropolisHastings extends Mcmc{
   
@@ -20,7 +19,7 @@ public class RandomWalkMetropolisHastings extends Mcmc{
    * Metropolis Hastings algorithm which targets a provided distribution using Gaussian random walk
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
-   * @param proposalCovariance proposal covariance use in homogeneous steps
+   * @param proposalCovariance proposal covariance, symmetric square matrix, size target.getNDim()
    * @param rng Random number generator all the random numbers
    */
   public RandomWalkMetropolisHastings(TargetDistribution target, int chainLength,
@@ -43,7 +42,6 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     this.proposalCovarianceChol = chain.proposalCovarianceChol;
   }
   
-  
   /**IMPLEMENTED: STEP
    * This chains takes a Metropolis-Hastings step and updates it member variables
    * @param currentStep Column vector of the current step of the MCMC, to be modified
@@ -55,8 +53,7 @@ public class RandomWalkMetropolisHastings extends Mcmc{
   }
   
   /**METHOD: METROPOLIS HASTINGS STEP
-   * Does a Metropolis-Hastings step
-   * Modifies x, given a proposal covariance
+   * Does a Metropolis-Hastings step given a proposal covariance defined in proposalCovarianceChol
    * It does not increment nStep when this method is called
    * The method updateStatistics will increment nStep
    * @param x current position of the chain, to be modified

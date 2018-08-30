@@ -5,26 +5,35 @@ import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.simple.SimpleMatrix;
 
-/**CLASS: MCMC
+/**ABSTRACT CLASS: MCMC
  * Framework for MCMC, method to be implemented:
- *   -step() (one step)
- * The target distribution is provided via the constructor.
+ *   -void step(SimpleMatrix currentStep)
+ * Implementations of this method should modify the parameter currentStep so that a MCMC step has
+ * been taken.
+ * Instances of this class can call the method run() to run the MCMC for a given length.
+ * The target distribution is to be provided via the constructor.
  * The chain length and a MersenneTwister is to be provided via the constructor.
- * The samples are stored in the member variable chainArray as a design matrix format
+ * The samples are stored in the member variable chainArray in a design matrix format
+ * 
+ * A few options:
+ *   -Thinning can be used by calling the method setNThin, this is doing a number of MCMC steps
+ *   between each sample, the aim to reduce autocorrelation
+ *   -The initial value can be set using the method setInitialValue
+ *   -Diagnostics such as the mean, covariance, acceptance rate can be obtained using the appropriate
+ *   getter methods
  */
 public abstract class Mcmc {
   
   protected TargetDistribution target; //target distribution for metropolis hastings
   //matrix containing the value of the chain at each step
   //matrix is of size chainLength X nDim, EJML is row major
-  //initially it will contain random Gaussian
   //the intial value is at the origin, this can be set using the method setInitialStep
   protected SimpleMatrix chainArray;
   protected SimpleMatrix chainMean; //the mean of the chain at the current step (column vector)
   protected SimpleMatrix chainCovariance; //covariance of the chain at the current step
   
-  //temporary member variables, statistics based on the chain and burn in
-  //these member variables will be instantised when the method calculateChainStatistics is called
+  //statistics based on the chain and burn in these member variables will be instantised when the
+  //method calculateChainStatistics is called
   //the mean of the chain (for each dimension) after burn in
   protected SimpleMatrix posteriorExpectation;
   //monte carlo error of the mean, after burn in
@@ -35,36 +44,35 @@ public abstract class Mcmc {
   //array of acceptance rate at each step
   protected double [] acceptanceArray;
   
+  protected int chainLength; //the total length of the chain requested
+  protected int nThin = 1; //thinning parameter
+
   protected int nStep = 0; //number of MCMC steps taken so far
   protected int nSample = 1; //number of MCMC samples taken so far (including the initial value)
-  protected int chainLength; //the total length of the chain
-  protected int nAccept = 0; //the number of acceptance steps taken
-  
-  protected int nThin = 1; //thinning parameter
-  
+  protected int nAccept = 0; //the number of acceptance steps taken so far
+  //note with thinning, a number of MCMC steps will be needed for each sample
+
   protected MersenneTwister rng; //random number generator
-  
-  
   
   /**CONSTRUCTOR
    * @param target Object which has a method to call the pdf
    * @param chainLength Length of the chain to be obtained
-   * @param rng Random number generator all the random numbers
+   * @param rng Random number generator
    */
-  public Mcmc(TargetDistribution target, int chainLength,
-      MersenneTwister rng) {
+  public Mcmc(TargetDistribution target, int chainLength, MersenneTwister rng) {
     this.target = target;
-    this.chainLength = chainLength;
-    this.chainArray = new SimpleMatrix(this.chainLength, this.getNDim());
+    this.chainArray = new SimpleMatrix(chainLength, getNDim());
     this.chainMean = new SimpleMatrix(this.getNDim(), 1);
     this.chainCovariance = new SimpleMatrix(this.getNDim(), this.getNDim());
-    this.acceptanceArray = new double [this.chainLength-1];
+    this.acceptanceArray = new double [chainLength-1];
+    this.chainLength = chainLength;
     this.rng = rng;
   }
   
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
-   * Does a shallow copy of the provided chain and extending the member variable chainArray
+   * Does a shallow copy of the provided chain and extending the matrix of the
+   * member variable chainArray
    * @param chain Chain to be extended
    * @param nMoreSteps Number of steps to be extended
    */
@@ -82,7 +90,7 @@ public abstract class Mcmc {
     this.nThin = chain.nThin;
     this.rng = chain.rng;
     
-    //deep copy the content of chainArray the old chain to the new chain
+    //deep copy the content of chainArray, the old chain, to the new chain
     //these contain the values of the MCMC
     for (int i=0; i<chain.chainArray.getNumElements(); i++) {
       this.chainArray.set(i, chain.chainArray.get(i));
@@ -95,17 +103,21 @@ public abstract class Mcmc {
   }
   
   /**METHOD: STEP
-   * Does a MCMC step and calls updateStatistics
+   * Does a MCMC step and updates the statistics of the chain.
+   * The statistics updated are chainMean, chainCovariance, acceptanceArray, nStep
+   * Implementations of this class must call updateStatistics at the end of the method
    * @param currentStep Column vector of the current step of the MCMC, to be modified
    */
   public abstract void step(SimpleMatrix currentStep);
   
   /**METHOD: RUN
-   * Get (chainLength - 1) MCMC samples, number of steps is (chainLength-1)*nThin
+   * Run the MCMC chain, save the samples and statistics.
+   * Get (chainLength - 1) MCMC samples, these are saved in the member variable chainArray
+   * Number of steps is (chainLength-1)*nThin, i.e. not all samples are saved with thinning
    */
   public void run() {
     //for (this.chainLength-1) times (this.nSample = 1 at construction)
-    //a while loop is used as the chain can start from this.nStep other than 0
+    //a while loop is used as the chain can start from this.nSample other than 1
     while (this.nSample < this.chainLength) {
       
       //instantiate column vector for the current value of the chain
@@ -115,20 +127,31 @@ public abstract class Mcmc {
       for (int iThin=0; iThin<this.nThin; iThin++) {
         this.step(x);
       }
-      //save x to the chain array
-      for (int iDim = 0; iDim<this.getNDim(); iDim++) {
-        this.chainArray.set(this.nSample, iDim, x.get(iDim));
-      }
-      //increment the number of samples
-      this.nSample++;
+      //save x to the chain array and increment the number of samples
+      this.setCurrentStep(x);
       
     }
     
   }
   
+  /**METHOD: SET CURRENT STEP
+   * Add sample to chainArray
+   * Increments nSample
+   * @param x Value of the chain to add
+   */
+  protected void setCurrentStep(SimpleMatrix x) {
+    //for each dimension, copy the value of x to chainArray
+    for (int iDim = 0; iDim<this.getNDim(); iDim++) {
+      this.chainArray.set(this.nSample, iDim, x.get(iDim));
+    }
+    //increment nSample
+    this.nSample++;
+  }
+  
   /**METHOD: ACCEPT STEP
-   * With probability acceptProb, the chain takes the value proposal, otherwise current
-   * The random uniform numbers in random01Array are used
+   * Given two vectors, current and proposal
+   * With probability acceptProb, the values of propsoal is copied over to current and nAccept
+   * increments, otherwise nothing
    * @param acceptProb Acceptance probability
    * @param current Column vector containing the value of the chain now, to be modified
    * @param proposal Column vector of the proposal step, not modified
@@ -145,13 +168,16 @@ public abstract class Mcmc {
   
   /**METHOD: SET INITIAL VALUE
    * Set the initial value of the chain, to be called before running the chain
-   * Also set the chainMean
-   * @param initialValue double [] containing the values of the initial position
+   * Calling this will initalise the member variable chainMean
+   * @param initialValue double [] containing the values of the initial position, needs to be of
+   * of the correction dimensions
    */
   public void setInitialValue(double [] initialValue) {
+    //copy the intial value to the chain array
     for (int i=0; i<initialValue.length; i++) {
       this.chainArray.set(i, initialValue[i]);
     }
+    //intalise the chain mean
     this.chainMean = new SimpleMatrix(this.getNDim(), 1, true, initialValue);
   }
     
@@ -165,12 +191,12 @@ public abstract class Mcmc {
     //acceptance rate = (number of acceptance steps) / (number of steps)
     //the acceptance rate keeps track of the acceptance rate from and including the 1st step
     //(not from the initial value)
-    //note that this.nStep has been incremented when metropolisHastingsStep was called
     this.acceptanceArray[this.nSample-1] = ((double)(this.nAccept)) / ((double)(this.nStep+1));
     
     //increment the number of steps taken
     this.nStep++;
-    //n is the chain length, so it is the number of steps + 1 (from the initial value)
+    //n is the chain length (for no thinning)
+    //so it is the number of steps + 1 (from the initial value)
     double n = (double) (this.nStep+1);
     
     //update the mean using the previous mean
@@ -211,15 +237,15 @@ public abstract class Mcmc {
   }
   
   /**METHOD: GET AUTOCORRELATION FUNCTION
-   * Calculates the sample autocorrelation function for lags 0 to nLag
+   * Calculates the sample autocorrelation function for lags 0 to nLag-1
    * Results are returned in a double []
    * @param nLag The maximum lag to be obtained
-   * @return The acf at lag 0, 1, 2, ..., nLag
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
    */
   public double [] getAcf(int nDim, int nLag) {
     
-    //declare array for the acf, for lag 0,1,2,...,nLag
-    double [] acf = new double[nLag+1];
+    //declare array for the acf, for lag 0,1,2,...,nLag-1
+    double [] acf = new double[nLag];
     //retrieve the chain
     SimpleMatrix chain = this.chainArray.extractVector(false, nDim);
     
@@ -231,7 +257,7 @@ public abstract class Mcmc {
       acf[i] = this.getSxxlag(chain, i);
     }
     //normalise the acf
-    for (int i=1; i<=nLag; i++) {
+    for (int i=1; i<nLag; i++) {
       acf[i] /= acf[0];
     }
     acf[0] = 1.0;
@@ -368,7 +394,7 @@ public abstract class Mcmc {
    * Call the calculatePosteriorStatistics prior to calling this method
    * Calculate ln(chain std) - ln (monte carlo error)
    * This gives some indiciation how large/small the monte carlo error, the chain should stop if
-   * this difference is small, e.g. <6.9
+   * this difference is large, e.g. >6.9
    * @return Array of ln(chain std) - ln (monte carlo error), an entry for each dimension
    */
   public double [] getDifferenceLnError() {
