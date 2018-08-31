@@ -286,7 +286,7 @@ public class RunVoEqui {
 					.scale(0.00000001/((double)target.getNDim()));
 			
 			//instantiate the chain and set the initial values
-			Mcmc chain = new MixtureAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
+			Mcmc chain = new BiasAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
 			chain.setInitialValue(m.graph.getFreeParameters());
 			chain.run();
 			chain.calculatePosteriorStatistics(0);
