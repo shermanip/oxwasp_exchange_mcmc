@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2018 Sherman Ip
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package uk.ac.warwick.sip.mcmc;
 
 import org.apache.commons.math3.random.MersenneTwister;
@@ -19,8 +35,8 @@ import org.ejml.simple.SimpleMatrix;
  *   -Thinning can be used by calling the method setNThin, this is doing a number of MCMC steps
  *   between each sample, the aim to reduce autocorrelation
  *   -The initial value can be set using the method setInitialValue
- *   -Diagnostics such as the mean, covariance, acceptance rate can be obtained using the appropriate
- *   getter methods
+ *   -Diagnostics such as the mean, covariance, acceptance rate can be obtained using the
+ *   appropriate getter methods
  */
 public abstract class Mcmc {
   
@@ -40,6 +56,8 @@ public abstract class Mcmc {
   protected SimpleMatrix monteCarloError;
   //covariance of the chain, after burn in
   protected SimpleMatrix posteriorCovariance;
+  //the values of the batches when working out the monte carlo error
+  protected SimpleMatrix batchArray;
   
   //array of acceptance rate at each step
   protected double [] acceptanceArray;
@@ -262,33 +280,41 @@ public abstract class Mcmc {
   }
   
   /**METHOD: GET AUTOCORRELATION FUNCTION
-   * Calculates the sample autocorrelation function for lags 0 to nLag
+   * Calculates the sample autocorrelation function for lags 0 to nLag-1
    * Results are returned in a double []
+   * @param nDim The dimension to work out the autocorrelation for
    * @param nLag The maximum lag to be obtained
-   * @return The acf at lag 0, 1, 2, ..., nLag
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
    */
   public double [] getAcf(int nDim, int nLag) {
-    
-    //declare array for the acf, for lag 0,1,2,...,nLag
-    double [] acf = new double[nLag+1];
-    //retrieve the chain
-    SimpleMatrix chain = this.chainArray.extractVector(false, nDim);
+    return this.getAcf(this.chainArray.extractVector(false, nDim), nLag);
+  }
+  
+  /**METHOD: GET AUTOCORRELATION FUNCTION
+   * Calculates the sample autocorrelation function for lags 0 to nLag-1
+   * Results are returned in a double []
+   * @param chain Vector containing values
+   * @param nLag The maximum lag to be obtained - 1
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
+   */
+  protected double [] getAcf(SimpleMatrix chain, int nLag) {
+  //declare array for the acf, for lag 0,1,2,...,nLag-1
+    double [] acf = new double[nLag];
     
     //work out the sample mean and centre the chain at the sample mean
     double mean = chain.elementSum() / ((double) chain.getNumElements());
     chain = chain.minus(mean);
     //work out the S_x_xLag for all lags, see method getSxxlag
-    for (int i=0; i<=nLag; i++) {
+    for (int i=0; i<nLag; i++) {
       acf[i] = this.getSxxlag(chain, i);
     }
     //normalise the acf
-    for (int i=1; i<=nLag; i++) {
+    for (int i=1; i<nLag; i++) {
       acf[i] /= acf[0];
     }
     acf[0] = 1.0;
     
     return acf;
-    
   }
   
   /**METHOD: GET S_X_XLAG
@@ -306,6 +332,36 @@ public abstract class Mcmc {
     //multiply the trimmed chains
     return chainFrontTrim.elementMult(chainEndTrim).elementSum();
     
+  }
+  
+  /**METHOD: GET EFFICIENCY
+   * Calculates the efficiency of the chain
+   * @param nDim The dimension to investigate
+   * @return efficiency
+   */
+  public double getEfficiency(int nDim) {
+    //get the maximum lag
+    int maxLag = this.nSample;
+    //declare matrix for storing the acf
+    SimpleMatrix acf = new SimpleMatrix(maxLag, 1, true, this.getAcf(nDim, maxLag));
+    
+    //find k which is odd and first integer for acf(k+1)+acf(k+2) to be negative
+    boolean foundK = false; //indicate if a k has been found
+    int k = 1; //initial value is 1
+    //while k hasn't been found
+    while (!foundK) {
+      //if acf(k+2) cannot be evaluated, then k has been found
+      if (k+2 >= maxLag) {
+        foundK = true;
+      //test if acf(k+1) + acf(k+2) is negative, if so k has been found
+      } else if ( (acf.get(k+1) + acf.get(k+2)) < 0) {
+        foundK = true;
+      }
+      //increment through all off k
+      k += 2;
+    }
+    //sum all the acf up to and including lag k
+    return 1/(1+2*acf.extractMatrix(1, k+1, 0, 1).elementSum());
   }
   
   /**METHOD: CALCULATE POSTERIOR STATISTICS
@@ -358,7 +414,7 @@ public abstract class Mcmc {
       int nBatch = (int) Math.round(Math.sqrt((double) n));
       //declare matrices to store the following
       SimpleMatrix batchLength = new SimpleMatrix(nBatch,1); //the length of each batch
-      SimpleMatrix batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
+      this.batchArray = new SimpleMatrix(nBatch,1); //the mean of each batch
       
       //declare variables for pointing to specific parts of the chain in order to obtain the batch
       //samples
@@ -377,18 +433,28 @@ public abstract class Mcmc {
         //get the samples from this batch
         SimpleMatrix batchVector = burntChain.extractMatrix(indexStart, indexEnd, 0, 1);
         //work out the sample mean and save it
-        batchArray.set(iBatch, batchVector.elementSum()/ batchLength.get(iBatch) );
+        this.batchArray.set(iBatch, batchVector.elementSum()/ batchLength.get(iBatch) );
         //set the pointer for the next batch
         indexStart = indexEnd;
       }
       
       //calculate the monte carlo error and save it
-      double monteCarloError_i = batchArray.minus(this.posteriorExpectation.get(i)).elementPower(2)
-          .elementMult(batchLength).elementSum();
+      double monteCarloError_i = this.batchArray.minus(this.posteriorExpectation.get(i))
+          .elementPower(2).elementMult(batchLength).elementSum();
       monteCarloError_i /= ((double)(nBatch * n));
       monteCarloError_i = Math.sqrt(monteCarloError_i);
       this.monteCarloError.set(i, monteCarloError_i);
     }
+  }
+  
+  /**METHOD: GET BATCH ACF
+   * Calculate the autocorrelation for the batches, batches are used for the monte carlo error
+   * Only call this method after calling calculateMonteCarloError
+   * @param nLag The maximum lag to be obtained - 1
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
+   */
+  public double [] getBatchAcf(int nLag) {
+    return this.getAcf(this.batchArray, nLag);
   }
   
   /**METHOD: CALCULATE POSTERIOR COVARIANCE
