@@ -19,8 +19,8 @@ import org.ejml.simple.SimpleMatrix;
  *   -Thinning can be used by calling the method setNThin, this is doing a number of MCMC steps
  *   between each sample, the aim to reduce autocorrelation
  *   -The initial value can be set using the method setInitialValue
- *   -Diagnostics such as the mean, covariance, acceptance rate can be obtained using the appropriate
- *   getter methods
+ *   -Diagnostics such as the mean, covariance, acceptance rate can be obtained using the
+ *   appropriate getter methods
  */
 public abstract class Mcmc {
   
@@ -253,7 +253,7 @@ public abstract class Mcmc {
    * Calculates the sample autocorrelation function for lags 0 to nLag-1
    * Results are returned in a double []
    * @param chain Vector containing values
-   * @param nLag The maximum lag to be obtained
+   * @param nLag The maximum lag to be obtained - 1
    * @return The acf at lag 0, 1, 2, ..., nLag-1
    */
   protected double [] getAcf(SimpleMatrix chain, int nLag) {
@@ -291,6 +291,36 @@ public abstract class Mcmc {
     //multiply the trimmed chains
     return chainFrontTrim.elementMult(chainEndTrim).elementSum();
     
+  }
+  
+  /**METHOD: GET EFFICIENCY
+   * Calculates the efficiency of the chain
+   * @param nDim The dimension to investigate
+   * @return efficiency
+   */
+  public double getEfficiency(int nDim) {
+    //get the maximum lag
+    int maxLag = this.nSample;
+    //declare matrix for storing the acf
+    SimpleMatrix acf = new SimpleMatrix(maxLag, 1, true, this.getAcf(nDim, maxLag));
+    
+    //find k which is odd and first integer for acf(k+1)+acf(k+2) to be negative
+    boolean foundK = false; //indicate if a k has been found
+    int k = 1; //initial value is 1
+    //while k hasn't been found
+    while (!foundK) {
+      //if acf(k+2) cannot be evaluated, then k has been found
+      if (k+2 >= maxLag) {
+        foundK = true;
+      //test if acf(k+1) + acf(k+2) is negative, if so k has been found
+      } else if ( (acf.get(k+1) + acf.get(k+2)) < 0) {
+        foundK = true;
+      }
+      //increment through all off k
+      k += 2;
+    }
+    //sum all the acf up to and including lag k
+    return 1/(1+2*acf.extractMatrix(1, k+1, 0, 1).elementSum());
   }
   
   /**METHOD: CALCULATE POSTERIOR STATISTICS
@@ -368,14 +398,20 @@ public abstract class Mcmc {
       }
       
       //calculate the monte carlo error and save it
-      double monteCarloError_i = this.batchArray.minus(this.posteriorExpectation.get(i)).elementPower(2)
-          .elementMult(batchLength).elementSum();
+      double monteCarloError_i = this.batchArray.minus(this.posteriorExpectation.get(i))
+          .elementPower(2).elementMult(batchLength).elementSum();
       monteCarloError_i /= ((double)(nBatch * n));
       monteCarloError_i = Math.sqrt(monteCarloError_i);
       this.monteCarloError.set(i, monteCarloError_i);
     }
   }
   
+  /**METHOD: GET BATCH ACF
+   * Calculate the autocorrelation for the batches, batches are used for the monte carlo error
+   * Only call this method after calling calculateMonteCarloError
+   * @param nLag The maximum lag to be obtained - 1
+   * @return The acf at lag 0, 1, 2, ..., nLag-1
+   */
   public double [] getBatchAcf(int nLag) {
     return this.getAcf(this.batchArray, nLag);
   }
