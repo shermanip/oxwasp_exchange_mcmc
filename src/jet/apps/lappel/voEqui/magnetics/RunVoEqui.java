@@ -51,6 +51,7 @@ import seed.minerva.util.GraphUtil;
 import seed.minerva.util.ReportingUtil;
 import uk.ac.warwick.sip.mcmc.AdaptiveRwmh;
 import uk.ac.warwick.sip.mcmc.BiasAdaptiveRwmh;
+import uk.ac.warwick.sip.mcmc.GelmanRubinF;
 import uk.ac.warwick.sip.mcmc.GraphDistribution;
 import uk.ac.warwick.sip.mcmc.Mcmc;
 import uk.ac.warwick.sip.mcmc.MixtureAdaptiveRwmh;
@@ -277,6 +278,7 @@ public class RunVoEqui {
 			dump("Now starting MCMC");
 			
 			int sampleCount=10000;
+			//index of the dimension, this is the centre of the cross section
 			int dimOfInterest = 3;
 			
 			//instantiate objects to be pass onto the mcmc object
@@ -289,24 +291,71 @@ public class RunVoEqui {
 			//instantiate the chain and set the initial values
 			Mcmc chain = new BiasAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
 			chain.setInitialValue(m.graph.getFreeParameters());
+			System.out.println("Number of dimensions = "+chain.getNDim());
+			//run the chain
 			chain.run();
-			chain.calculatePosteriorStatistics(0);
-			SimpleMatrix error = new SimpleMatrix(chain.getNDim(), 1, true, chain.getDifferenceLnError());
-			error.print();
 			
+			//for rubin-gelman, need to run additional chains
+			int nChain = 5;
+			//declare array of chains
+			Mcmc [] mcmcArray = new Mcmc [nChain];
+			mcmcArray[0] = chain; //save the first chain
+			//declare variables for different initial values
+			double [] initialValue = new double[chain.getNDim()];
+			//initial value uses random points from the first chain
+			int nIndex;
+			//for each chain
+			for (int iChain=1; iChain<nChain; iChain++) {
+				//instantiate a chain
+				Mcmc chainSub = new BiasAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
+				//use random point from the first chain as the initial value
+				nIndex = rng.nextInt(sampleCount);
+				for (int iDim=0; iDim<chain.getNDim(); iDim++) {
+					initialValue[iDim] = chain.getChain()[nIndex*chain.getNDim()+iDim];
+				}
+				chainSub.setInitialValue(initialValue);
+				//run the chain and save it
+				chainSub.run();
+				mcmcArray[iChain] = chainSub;
+			}
+			//plot trace plot for each chain
+			for (int i=0; i<nChain; i++) {
+				JyPlot tracePlot = new JyPlot();
+				tracePlot.figure();
+				tracePlot.plot(mcmcArray[i].getChain(dimOfInterest));
+				tracePlot.xlabel("number of iterations");
+				tracePlot.ylabel("current density (kA.m^{-2})");
+				tracePlot.show();
+				tracePlot.exec();
+			}
 			
-			JyPlot tracePlot = new JyPlot();
-			tracePlot.figure();
-			tracePlot.plot(chain.getChain(dimOfInterest));
-			tracePlot.show();
-			tracePlot.exec();
+			//get the gelman rubin statistic
+			//plot 2,3,...,nBurnInMax vs F
+			int nBurnInMax = 400;
+			GelmanRubinF fStat = new GelmanRubinF(mcmcArray);
+			double [] nBurnIn = new double [nBurnInMax-1];
+			for (int i=0; i<nBurnIn.length; i++) {
+				nBurnIn[i] = (double)(i+2);
+			}
+			JyPlot fPlot = new JyPlot();
+			fPlot.figure();
+			fPlot.plot(nBurnIn, fStat.getGelmanRubinFArray(dimOfInterest, nBurnInMax));
+			fPlot.xlabel("burn-in");
+			fPlot.ylabel("F statistic");
+			fPlot.show();
+			fPlot.exec();
 			
+			//plot acceptance rate
 			JyPlot acceptancePlot = new JyPlot();
 			acceptancePlot.figure();
 			acceptancePlot.plot(chain.getAcceptanceRate());
+			acceptancePlot.xlabel("number of iterations");
+			acceptancePlot.ylabel("acceptance rate");
 			acceptancePlot.show();
 			acceptancePlot.exec();
 			
+			
+			//plot autocorrelation
 			int nLag = 100;
 			double [] lag = new double[nLag];
 			for (int i=0; i<nLag; i++) {
@@ -315,11 +364,41 @@ public class RunVoEqui {
 			JyPlot autoCorrelationPlot = new JyPlot();
 			autoCorrelationPlot.figure();
 			autoCorrelationPlot.stem(lag, chain.getAcf(dimOfInterest, nLag));
-			autoCorrelationPlot.hlines(1/Math.sqrt(sampleCount), 0, nLag, "r");
-			autoCorrelationPlot.hlines(-1/Math.sqrt(sampleCount), 0, nLag, "r");
+			autoCorrelationPlot.hlines(1/Math.sqrt(sampleCount), 0, nLag-1, "r");
+			autoCorrelationPlot.hlines(-1/Math.sqrt(sampleCount), 0, nLag-1, "r");
+			autoCorrelationPlot.xlabel("lag");
+			autoCorrelationPlot.ylabel("autocorrelation");
 			autoCorrelationPlot.show();
 			autoCorrelationPlot.exec();
-			System.out.println("Number of dimensions = "+chain.getNDim());
+			
+			//calculate the posterior statistics using burn in
+			chain.calculatePosteriorStatistics(0);
+			//print the monte carlo error
+			System.out.println("log precision = "+chain.getDifferenceLnError()[dimOfInterest]);
+			//print the mean
+			System.out.println("mean = "+chain.getPosteriorExpectation()[dimOfInterest]);
+			//print the variance
+			SimpleMatrix posteriorCovariance = new SimpleMatrix(chain.getNDim(), chain.getNDim(),
+					true, chain.getPosteriorCovariance());
+			System.out.println("error = "+Math.sqrt(posteriorCovariance.get(dimOfInterest, dimOfInterest)));
+			System.out.println("units = kA.m^{-2}");
+			
+			//plot autocorrelation of the batch
+			nLag = 10;
+			lag = new double[nLag];
+			for (int i=0; i<nLag; i++) {
+				lag[i] = (double)(i);
+			}
+			JyPlot batchAcfPlot = new JyPlot();
+			batchAcfPlot.figure();
+			batchAcfPlot.stem(lag, chain.getBatchAcf(nLag));
+			batchAcfPlot.hlines(1/Math.sqrt(Math.sqrt(sampleCount)), 0, nLag-1, "r");
+			batchAcfPlot.hlines(-1/Math.sqrt(Math.sqrt(sampleCount)), 0, nLag-1, "r");
+			batchAcfPlot.xlabel("lag");
+			batchAcfPlot.ylabel("autocorrelation");
+			batchAcfPlot.show();
+			batchAcfPlot.exec();
+			
 		}
 	}
 	private static void plotMcmc(long sampleCount,String outputFolder,long timeValLong,double[] sampleVec) {
