@@ -175,12 +175,12 @@ Current tomography divides the tokamak cross section into a grid and solves for 
 \section{Metropolis Hastings}
 Bayesian inference is the study of the posterior distribution, for example the posterior distribution can be $\mathbf{X} = j_\phi\text{ for all grid elements}|\text{diagnostics}$. The aim of Markov chains using Monte Carlo (MCMC) is to simulate the posterior distribution, otherwise known as sampling the target distribution. Suppose the MCMC samples are $\mathbf{X}_0,\mathbf{X}_1,\dotdotdot\mathbf{X}_n$, then useful summary statistics can be obtained such as the mean
 \begin{equation}
-\expectation\left[\mathbf{X}\right] = \dfrac{1}{n+1}\sum_{i=0}^n \mathbf{X}_i
+\widehat{\vectGreek{\mu}} = \dfrac{1}{n}\sum_{i=1}^n \mathbf{X}_i
 \end{equation}
 and the covariance
 \begin{equation}
-\cov\left[\mathbf{X}\right] = \dfrac{1}{n}\sum_{i=0}^n \left[\mathbf{X}_i-\expectation\left[\mathbf{X}\right]\right]
-\left[\mathbf{X}_i-\expectation\left[\mathbf{X}\right]\right]\T
+\widehat{\matr{\Sigma}} = \dfrac{1}{n-1}\sum_{i=1}^n \left[\mathbf{X}_i-\widehat{\vectGreek{\mu}}\right]
+\left[\mathbf{X}_i-\widehat{\vectGreek{\mu}}\right]\T
 \end{equation}
 which can be used to obtain error bars. To make sampling easier, MCMC sample samples which are Markovian $\{\mathbf{X}_n|\mathbf{X}_{n-1},\mathbf{X}_{n-2},\dotdotdot,\mathbf{X}_{0}\} = \{\mathbf{X}_n|\mathbf{X}_{n-1}\}$.
 
@@ -325,7 +325,7 @@ where
 \end{equation}
 This helps the covariance to be non-singular if not enough acceptance steps were taken due to a poor choice of the initial covariance.
 
-A trace plot is a plot of the MCMC sample $x_0,x_1,\dotdotdot,x_n$ and it gives some indication on how the MCMC explore the state space, ideally exploring the space rapidly at each iteration with a sensible acceptance rate \citep{rosenthal2011optimal}. The acceptance rate should be monitored and values such as 0.234 in \cite{roberts1997weak} is a good rule of thumb. An example of a good trace plot is shown in Figure \ref{fig:trace}. The acceptance rate, shown in Figure \ref{fig:accept}, does converge but to a value other than 0.234. This may be fine as the result in \cite{roberts1997weak} does depend on strong assumptions, such as independence between dimensions.
+A trace plot is a plot of the MCMC sample $x_1,x_2,\dotdotdot,x_n$ and it gives some indication on how the MCMC explore the state space, ideally exploring the space rapidly at each iteration with a sensible acceptance rate \citep{rosenthal2011optimal}. The acceptance rate should be monitored and values such as 0.234 in \cite{roberts1997weak} is a good rule of thumb. An example of a good trace plot is shown in Figure \ref{fig:trace}. The acceptance rate, shown in Figure \ref{fig:accept}, does converge but to a value other than 0.234. This may be fine as the result in \cite{roberts1997weak} does depend on strong assumptions, such as independence between dimensions.
 
 \begin{figure}[ht]
   \centering
@@ -344,13 +344,13 @@ The autocorrelation \citep{geyer2011mcmc} indicates the correlation between MCMC
 \begin{equation}
 \widehat{\rho}(k)=\dfrac
 {
-  \sum_{i=0}^{n-k}(x_i-\bar{x})(x_{i+k}-\bar{x})
+  \sum_{i=1}^{n-k}(x_i-\bar{x})(x_{i+k}-\bar{x})
 }
 {
-  \sum_{i=0}^{n}(x_i-\bar{x})^2
+  \sum_{i=1}^{n}(x_i-\bar{x})^2
 }
 \end{equation}
-where $\bar{x}=\sum_{i=0}^nx_i/n$. The autocorrelation should be as small as possible in magnitude as this would mean future samples won't be influenced as much by previous samples which may indicate how the MCMC explore the state space. If the samples are uncorrelated, then the autocorrelation should be $\|\widehat{\rho}(k)\|<1/\sqrt{n}$ for the majority of $k=1,2,3,\dotdotdot$. The autocorrelation is shown in Figure \ref{fig:acf} with low autocorrelation at around lag 40 and above.
+where $\bar{x}=\sum_{i=1}^nx_i/n$. The autocorrelation should be as small as possible in magnitude as this would mean future samples won't be influenced as much by previous samples which may indicate how the MCMC explore the state space. If the samples are uncorrelated, then the autocorrelation should be $\|\widehat{\rho}(k)\|<1/\sqrt{n}$ for the majority of $k=1,2,3,\dotdotdot$. The autocorrelation is shown in Figure \ref{fig:acf} with low autocorrelation at around lag 40 and above.
 
 \begin{figure}[ht]
   \centering
