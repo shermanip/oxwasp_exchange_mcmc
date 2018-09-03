@@ -286,7 +286,7 @@ public class RunVoEqui {
 			MersenneTwister rng = new MersenneTwister(-280845742); //random number generator
 			//set the proposal covariance, in adaptive methods this is the inital proposal
 			SimpleMatrix proposalCovariance = SimpleMatrix.identity(target.getNDim())
-					.scale(0.00000001/((double)target.getNDim()));
+					.scale(Math.pow(10, -6)/((double)target.getNDim()));
 			
 			//instantiate the chain and set the initial values
 			Mcmc chain = new BiasAdaptiveRwmh(target, sampleCount, proposalCovariance, rng );
@@ -331,7 +331,7 @@ public class RunVoEqui {
 			
 			//get the gelman rubin statistic
 			//plot 2,3,...,nBurnInMax vs F
-			int nBurnInMax = 400;
+			int nBurnInMax = 2000;
 			GelmanRubinF fStat = new GelmanRubinF(mcmcArray);
 			double [] nBurnIn = new double [nBurnInMax-1];
 			for (int i=0; i<nBurnIn.length; i++) {
@@ -371,17 +371,24 @@ public class RunVoEqui {
 			autoCorrelationPlot.show();
 			autoCorrelationPlot.exec();
 			
-			//calculate the posterior statistics using burn in
-			chain.calculatePosteriorStatistics(0);
-			//print the monte carlo error
-			System.out.println("log precision = "+chain.getDifferenceLnError()[dimOfInterest]);
-			//print the mean
-			System.out.println("mean = "+chain.getPosteriorExpectation()[dimOfInterest]);
-			//print the variance
-			SimpleMatrix posteriorCovariance = new SimpleMatrix(chain.getNDim(), chain.getNDim(),
-					true, chain.getPosteriorCovariance());
-			System.out.println("error = "+Math.sqrt(posteriorCovariance.get(dimOfInterest, dimOfInterest)));
-			System.out.println("units = kA.m^{-2}");
+			//print the efficiency for all chains
+			for (int i=0; i<nChain; i++) {
+				//print the efficiency
+				System.out.println("efficiency = "+mcmcArray[i].getEfficiency(dimOfInterest));
+				
+				//calculate the posterior statistics using burn in
+				mcmcArray[i].calculatePosteriorStatistics(410);
+				//print the monte carlo error
+				System.out.println("log precision = "+mcmcArray[i].getDifferenceLnError()[dimOfInterest]);
+				//print the mean
+				System.out.println("mean = "+mcmcArray[i].getPosteriorExpectation()[dimOfInterest]);
+				//print the variance
+				SimpleMatrix posteriorCovariance = new SimpleMatrix(mcmcArray[i].getNDim(), mcmcArray[i].getNDim(),
+						true, mcmcArray[i].getPosteriorCovariance());
+				System.out.println("error = "+Math.sqrt(posteriorCovariance.get(dimOfInterest, dimOfInterest)));
+				System.out.println("units = kA.m^{-2}");
+				
+			}
 			
 			//plot autocorrelation of the batch
 			nLag = 10;
