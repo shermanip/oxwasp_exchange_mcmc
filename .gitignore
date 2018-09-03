@@ -7,3 +7,9 @@
 /jar/
 *.jar
 *.tar.gz
+*.aux
+*.bbl
+*.blg
+*.log
+*.pdf
+*.gz
