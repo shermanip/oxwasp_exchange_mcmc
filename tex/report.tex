@@ -317,13 +317,13 @@ A small example will be given here. A MCMC has been constructed to estimate the 
 
 A slight adjustment was made to the adaptive RWMH in this example. A biased sample covariance was used rather than the unbiased version. It is given as
 \begin{equation}
-\widehat{\matr{\Sigma}}_n=\dfrac{\sum_{i=1}^n\left[\vect{x}_i-\widehat{\vectGreek{\mu}}_n\right]\left[\vect{x}_i-\widehat{\vectGreek{\mu}}_n\right]\T}{n}
+\widehat{\matr{\Sigma}}_n=\dfrac{\sum_{i=0}^n\left[\vect{x}_i-\widehat{\vectGreek{\mu}}_n\right]\left[\vect{x}_i-\widehat{\vectGreek{\mu}}_n\right]\T}{n}
 \end{equation}
 where
 \begin{equation}
-\widehat{\vectGreek{\mu}}_n = \dfrac{1}{n+1}\sum_{i=1}^n \vect{x}_i \ .
+\widehat{\vectGreek{\mu}}_n = \dfrac{1}{n+1}\sum_{i=0}^n \vect{x}_i
 \end{equation}
-This helps the covariance to be non-singular if not enough acceptance steps were taken due to a poor choice of the initial covariance.
+and $\vect{x}_0$ is a vector of zeros. This helps the covariance to be non-singular if not enough acceptance steps were taken due to a poor choice of the initial covariance.
 
 A trace plot is a plot of the MCMC sample $x_1,x_2,\dotdotdot,x_n$ and it gives some indication on how the MCMC explore the state space, ideally exploring the space rapidly at each iteration with a sensible acceptance rate \citep{rosenthal2011optimal}. The acceptance rate should be monitored and values such as 0.234 in \cite{roberts1997weak} is a good rule of thumb. An example of a good trace plot is shown in Figure \ref{fig:trace}. The acceptance rate, shown in Figure \ref{fig:accept}, does converge but to a value other than 0.234. This may be fine as the result in \cite{roberts1997weak} does depend on strong assumptions, such as independence between dimensions.
 
