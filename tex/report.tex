@@ -173,7 +173,7 @@ The Grad-Shafranov equation can be solved numerically, for example to solve for 
 Current tomography divides the tokamak cross section into a grid and solves for each grid element the current density under the equilibrium problem given measurements or diagnostics \citep{svensson2008current}. Diagnostics include the magnetic field strength from and of the coils, temperature readings and particles undergoing Thomson scattering \citep{svensson2004integrating} \citep{ford2009bayesian}. This can quickly turn into a high dimensional problem. By connecting all of the diagnostics and ingredients of the Grad-Shafranov equation together, a hierarchical model can be built. Bayesian inference can be used on the hierarchical model to make predictions, along with error bars, variables of interest such as the current density. There exist software which builds such a hierarchical model \citep{svensson2007large} \citep{svensson2008current} \citep{svensson2010connecting}. However exact methods for Bayesian inference is  very hard and approximate methods such as MCMC are required here \citep{ford2010tokamak}.
 
 \section{Metropolis Hastings}
-Bayesian inference is the study of the posterior distribution, for example the posterior distribution can be $\mathbf{X} = j_\phi\text{ for all grid elements}|\text{diagnostics}$. The aim of Markov chains using Monte Carlo (MCMC) is to simulate the posterior distribution, otherwise known as sampling the target distribution. Suppose the MCMC samples are $\mathbf{X}_0,\mathbf{X}_1,\dotdotdot\mathbf{X}_n$, then useful summary statistics can be obtained such as the mean
+Bayesian inference is the study of the posterior distribution, for example the posterior distribution can be $\mathbf{X} = j_\phi\text{ for all grid elements}|\text{diagnostics}$. The aim of Markov chains using Monte Carlo (MCMC) is to simulate the posterior distribution, otherwise known as sampling the target distribution. Suppose the MCMC samples are $\mathbf{X}_1,\mathbf{X}_2,\dotdotdot\mathbf{X}_n$, then useful summary statistics can be obtained such as the mean
 \begin{equation}
 \widehat{\vectGreek{\mu}} = \dfrac{1}{n}\sum_{i=1}^n \mathbf{X}_i
 \end{equation}
@@ -182,7 +182,7 @@ and the covariance
 \widehat{\matr{\Sigma}} = \dfrac{1}{n-1}\sum_{i=1}^n \left[\mathbf{X}_i-\widehat{\vectGreek{\mu}}\right]
 \left[\mathbf{X}_i-\widehat{\vectGreek{\mu}}\right]\T
 \end{equation}
-which can be used to obtain error bars. To make sampling easier, MCMC sample samples which are Markovian $\{\mathbf{X}_n|\mathbf{X}_{n-1},\mathbf{X}_{n-2},\dotdotdot,\mathbf{X}_{0}\} = \{\mathbf{X}_n|\mathbf{X}_{n-1}\}$.
+which can be used to obtain error bars. To make sampling easier, MCMC sample samples which are Markovian $\{\mathbf{X}_n|\mathbf{X}_{n-1},\mathbf{X}_{n-2},\dotdotdot,\mathbf{X}_{1}\} = \{\mathbf{X}_n|\mathbf{X}_{n-1}\}$.
 
 The random walk Metropolis-Hastings (RWMH) algorithm \citep{metropolis1953equation} \citep{hastings1970monte} is an example of a MCMC. Suppose a sample $\vect{X}_n = \vect{x}_n$ was obtained. Define the proposal to be $\vect{Y}_{n+1}|\vect{X}_n=\vect{x}_n \sim \normal\left(\vect{x}_n,\matr{\Theta}\right)$ which is a random walk. The transition from $\vect{X}_n=\vect{x}_n$ to $\vect{X}_{n+1}$ is
 \begin{multline}
@@ -197,7 +197,7 @@ where
 \begin{equation}
 \alpha\left(\vect{x}_{n},\vect{y}_{n+1}\right)=\min\left(1,\dfrac{\pi(\vect{y}_{n+1})}{\pi(\vect{x}_{n})}\right)
 \end{equation}
-is the acceptance rate and $\pi(\vect{x})$ is the target density function. Suppose $\vect{X}_0=\vect{x}_0$ was defined or selected by the user, then the samples $\vect{X}_1,\vect{X}_2,\dotdotdot$ can be obtained. It can be shown that under mild conditions, such a transition will make the Markov chain converge to, or sample correctly, the target distribution \citep{roberts1994simple}.
+is the acceptance rate and $\pi(\vect{x})$ is the target density function. Suppose $\vect{X}_1=\vect{x}_1$ was defined or selected by the user, then the samples $\vect{X}_2,\vect{X}_3,\dotdotdot$ can be obtained. It can be shown that under mild conditions, such a transition will make the Markov chain converge to, or sample correctly, the target distribution \citep{roberts1994simple}.
 
 The proposal covariance $\matr{\Theta}$ must be selected however and this does affect the acceptance rate and the performance of the RWMH. Acceptance rates too small or too large will cause the chain to not explore the target well \citep{gelman1996efficient}. Under some strong assumptions and in high dimension $d$, the optimal acceptance rate is about 0.234 \citep{gelman1996efficient} \citep{roberts1997weak} \citep{rosenthal2011optimal}. In the Gaussian example, the optimial covariance is $\matr{\Theta}={2.38^2}\matr{\Sigma}/d$ where $\matr{\Sigma}$ is the covariance of the target.
 
@@ -209,7 +209,7 @@ $\matr{\Sigma}$ is usually unknown. There exist adaptive methods \citep{haario20
 \matr{\Theta}_0 & \text{otherwise}
 \end{cases}
 \end{equation}
-where $\matr{\Theta}_0$ is some small initial proposal covariance, $n_0$ is an integer determining the number of initial non-adaptive steps, $\widehat{\matr{\Sigma}}_n$ is the unbiased sample covariance estimator of the chain $\vect{X}_0,\vect{X}_1,\dotdotdot,\vect{X}_n$ and $0\leqslant\beta\leqslant 1$ is some small number \citep{roberts2009examples}. For example it was selected that $n_0= 2d-1$ and $\beta = 0.05$. It can be shown that under some conditions, these adaptive methods will still sample the target correctly \citep{rosenthal2007coupling}.
+where $\matr{\Theta}_0$ is some small initial proposal covariance, $n_0$ is an integer determining the number of initial non-adaptive steps, $\widehat{\matr{\Sigma}}_n$ is the unbiased sample covariance estimator of the chain $\vect{X}_1,\vect{X}_2,\dotdotdot,\vect{X}_n$ and $0\leqslant\beta\leqslant 1$ is some small number \citep{roberts2009examples}. For example it was selected that $n_0= 2d$ and $\beta = 0.05$. It can be shown that under some conditions, these adaptive methods will still sample the target correctly \citep{rosenthal2007coupling}.
 
 \section{Hamiltonian Monte Carlo}
 Hamiltonian Monte Carlo (HMC) \citep{neal2011mcmc} improves the random walk behaviour in RWMH by using Hamiltonian dynamics to guide the direction of the chain. The Hamilton's equations are
@@ -453,7 +453,7 @@ The error in the sample mean of the chain is called the Monte Carlo error, simil
 \ .
 \end{equation}
 
-The number of batches should increase with $n$.A good rule of thumb is to set $Q=\text{round}(\sqrt{n})$ and the batch sizes to be as similar as possible \citep{jones2006fixed}. The batch means $b_1,b_2,\dotdotdot,b_Q$ should be as uncorrelated as possible and an autocorrelation plot can be used to judge this, as shown in Figure \ref{fig:batch_acf}. 
+The number of batches should increase with $n$. A good rule of thumb is to set $Q=\text{round}(\sqrt{n})$ and the batch sizes to be as similar as possible \citep{jones2006fixed}. The batch means $b_1,b_2,\dotdotdot,b_Q$ should be as uncorrelated as possible and an autocorrelation plot can be used to judge this, as shown in Figure \ref{fig:batch_acf}. 
 
 The Monte Carlo error can be used to judge how long a chain should run. The longer the chain, the smaller the Monte Carlo error is. It can be argued that not much can be gained if the Monte Carlo error is smaller than the sample standard deviation of the chain $s$ by an order of magnitude of 2. Following from this, a threshold can be used to stop the chain, for example if $\widehat{\sigma}_{\text{ME}}/s<10^{-2}$ or $\ln(s)-\ln(\widehat{\sigma}_{\text{ME}}) > 4.6$.
 
