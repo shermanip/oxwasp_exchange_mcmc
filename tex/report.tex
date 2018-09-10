@@ -75,7 +75,7 @@ An example of nuclear fusion is the fusion of deuterium $_{2}^{1}\textrm{H}$ and
 \end{equation}
 High temperatures of $\sim 10^8 \text{K}$ are required for the fusion reaction to occur by overcoming the Coulomb barrier. In this reaction, the kinetic energy of the $\alpha$ particle and the neutron are 3.5 MeV and 14.1 MeV respectively. The energy can be harnessed using neutron absorbing material such as lithium.
 
-At such high temperatures, atoms are ionized to form plasma. and this must be contained for the purpose of fusion energy. A tokamak, a doughnut-like shaped container, contains the plasma using magnetic coils which forms a helical magnetic field.
+At such high temperatures, atoms are ionized to form plasma and this must be contained for the purpose of fusion energy. A tokamak, a doughnut-like shaped container, contains the plasma using magnetic coils which forms a helical magnetic field.
 
 Achieving ignition, that is when the power generated is greater than the rate of energy lost, is difficult to achieve. The Lawson's criterion \citep{lawson1957some} describes that high ion density and high confinement time are required for ignition.
 
@@ -161,7 +161,7 @@ Using the fact that $\mu_0j_\phi=\left(\nabla\times\mathbf{B}\right)\cdot\wideha
     \right)
   \ .
 \end{equation}
-This can be combined with Equation \eqref{eq:j_psi} to get the Grad-Shafranov equation \citep{grad1958hydromagnetic} \citep{shafranov1966plasma}
+This can be combined with Equation \eqref{eq:j_psi} to get the Grad-Shafranov equation \citep{lust1957axialsymmetrische} \citep{grad1958hydromagnetic} \citep{shafranov1958magnetohydrodynamical, shafranov1966plasma}
 \begin{equation}
 \dfrac{\partial^2 \psi}{\partial z^2}+r\dfrac{\partial}{\partial r}\left(\dfrac{1}{r}\dfrac{\partial\psi}{\partial r}\right)
 =
@@ -170,7 +170,7 @@ This can be combined with Equation \eqref{eq:j_psi} to get the Grad-Shafranov eq
 \end{equation}
 The Grad-Shafranov equation can be solved numerically, for example to solve for the current density spatially in a tokamak \citep{lao1985reconstruction}. This is known as the equilibrium problem.
 
-Current tomography divides the tokamak cross section into a grid and solves for each grid element the current density under the equilibrium problem given measurements or diagnostics \citep{svensson2008current}. Diagnostics include the magnetic field strength from and of the coils, temperature readings and particles undergoing Thomson scattering \citep{svensson2004integrating} \citep{ford2009bayesian}. This can quickly turn into a high dimensional problem. By connecting all of the diagnostics and ingredients of the Grad-Shafranov equation together, a hierarchical model can be built. Bayesian inference can be used on the hierarchical model to make predictions, along with error bars, variables of interest such as the current density. There exist software which builds such a hierarchical model \citep{svensson2007large} \citep{svensson2008current} \citep{svensson2010connecting}. However exact methods for Bayesian inference is  very hard and approximate methods such as MCMC are required here \citep{ford2010tokamak}.
+Current tomography divides the tokamak cross section into a grid and solves for each grid element the current density under the equilibrium problem given measurements or diagnostics \citep{svensson2008current}. Diagnostics include the magnetic field strength from and of the coils, temperature readings and particles undergoing Thomson scattering \citep{svensson2004integrating} \citep{ford2009bayesian}. This can quickly turn into a high dimensional problem. By connecting all of the diagnostics and ingredients of the Grad-Shafranov equation together, a hierarchical model can be built. Bayesian inference can be used on the hierarchical model to make predictions, along with error bars, variables of interest such as the current density. There exist software which builds such a hierarchical model \citep{svensson2007large} \citep{ svensson2008current, svensson2010connecting}. However exact methods for Bayesian inference is  very hard and approximate methods such as MCMC are required here \citep{ford2010tokamak}.
 
 \section{Metropolis Hastings}
 Bayesian inference is the study of the posterior distribution, for example the posterior distribution can be $\mathbf{X} = j_\phi\text{ for all grid elements}|\text{diagnostics}$. The aim of Markov chains using Monte Carlo (MCMC) is to simulate the posterior distribution, otherwise known as sampling the target distribution. Suppose the MCMC samples are $\mathbf{X}_1,\mathbf{X}_2,\dotdotdot\mathbf{X}_n$, then useful summary statistics can be obtained such as the mean
@@ -365,7 +365,7 @@ It may be convenient to combine the autocorrelation for different lags into a si
 \end{equation}
 where $K$ is the first odd positive integer for which $\widehat{\rho}(K + 1) + \widehat{\rho}(K + 2)$ is negative \citep{gelman2014bayesian}.
 
-Burn-in \citep{geyer1992practical} \citep{geyer2011mcmc} is the discarding of samples at the start of the chain. This practice is done because the chain does need a number of iterations to converge to the target from some initial value and also for the adaptation to settle down. The Gelman-Rubin $F$ statistic \citep{gelman1992inference} is a rule of thumb for how many samples to discard for burn-in. This is done by starting multiple chains at different initial points and judging how long it takes for all of these chains to have similar sample means. The $F$ statistic is obtained by comparing the within and between chain variances using the second half of the chain, similar to the one-way ANOVA. Let $x_1^{(j)}, x_2^{(j)},\dotdotdot,x_n^{(j)}$ be the $j$th chain for $j=1,2,\dotdotdot,k$. Let
+Burn-in \citep{geyer1992practical, geyer2011mcmc} is the discarding of samples at the start of the chain. This practice is done because the chain does need a number of iterations to converge to the target from some initial value and also for the adaptation to settle down. The Gelman-Rubin $F$ statistic \citep{gelman1992inference} is a rule of thumb for how many samples to discard for burn-in. This is done by starting multiple chains at different initial points and judging how long it takes for all of these chains to have similar sample means. The $F$ statistic is obtained by comparing the within and between chain variances using the second half of the chain, similar to the one-way ANOVA. Let $x_1^{(j)}, x_2^{(j)},\dotdotdot,x_n^{(j)}$ be the $j$th chain for $j=1,2,\dotdotdot,k$. Let
 \begin{equation}
 \bar{x}^{(j)}(n_b)=\dfrac{\sum_{i=n_b+1}^{2n_b}x_i^{(j)}}{n_b}
 \end{equation}
@@ -382,7 +382,7 @@ s_W^2(n_b) = \dfrac{
   \right)^2
 }
 {
-  kn - k
+  kn_b - k
 }
 \end{equation}
 and the between chain variance is
