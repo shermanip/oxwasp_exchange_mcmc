@@ -1,6 +1,6 @@
 # oxwasp_exchange_mcmc
 
-Java implementations of the Metropolis-Hastings (Metropolis et al., 1953) (Hastings, 1970), Adaptive Metropolis-Hastings (Haario et al., 2001) (Roberts and Rosenthal, 2009), Hamiltonian Monte Carlo (Neal, 2011) and No U-Turn Sampler (Hoffman and Gelman, 2014).
+**Java** implementations of the **Metropolis-Hastings** (Metropolis et al., 1953) (Hastings, 1970), **Adaptive Metropolis-Hastings** (Haario et al., 2001) (Roberts and Rosenthal, 2009), **Hamiltonian Monte Carlo** (Neal, 2011) and **No U-Turn Sampler** (Hoffman and Gelman, 2014).
 
 There exist 2 branches. The [master branch](https://github.com/shermanip/oxwasp_exchange_mcmc) only contains Java implements of the MCMC algorithms and requires the following libraries
 * org.ejml [Efficient Java Matrix Library](http://ejml.org/wiki/index.php?title=Main_Page)
