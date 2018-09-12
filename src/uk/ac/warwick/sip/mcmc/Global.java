@@ -16,22 +16,26 @@
 
 package uk.ac.warwick.sip.mcmc;
 
-import javax.swing.JFrame;
+import aliceinnets.python.jyplot.JyPlot;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.interfaces.decomposition.CholeskyDecomposition_F64;
 import org.ejml.simple.SimpleMatrix;
-import org.math.plot.Plot2DPanel;
 
+/**GLOBAL
+ * Example code for MCMC targetting a Normal with random covariance
+ * Runs 5 chains
+ * Plots trace plot, F statistic, acceptance rate, autocorrelation, autocorrelation of the batches
+ * Prints efficiency, log precision, mean and error
+ */
 public class Global {
   
   public static void main(String[] args) {
     int nDim = 16;
-    int chainLength = 10000;
+    int chainLength = 100000;
     MersenneTwister rng = new MersenneTwister(-280845742);
-    //SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
     SimpleMatrix targetCovariance = Global.getRandomCovariance(nDim, rng);
     SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(0.001, 2)/((double)nDim));
     SimpleMatrix massMatrix = SimpleMatrix.identity(nDim);
@@ -41,64 +45,120 @@ public class Global {
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
     int nAdaptive = 100;
     
-    int nChain = 1;
-    Mcmc [] chainArray = new Mcmc [nChain];
-    SimpleMatrix initialPositionScale = SimpleMatrix.identity(nDim);
-    initialPositionScale = initialPositionScale.scale(0.0);
-    
+    //for rubin-gelman, need to run additional chains
+    int nChain = 5;
+    //declare array of chains
+    Mcmc [] mcmcArray = new Mcmc [nChain];
+    //declare variables for different initial values
+    double [] initialValue = new double[target.getNDim()];
+    //initial value uses random points from the first chain
+    int nIndex;
+    //for each chain
     for (int iChain=0; iChain<nChain; iChain++) {
-      chainArray[iChain] =  new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng) ;
-      //chainArray[iChain] = new HamiltonianMonteCarlo(target, chainLength,massMatrix, sizeLeapFrog, nLeapFrog, rng) ;
-      //chainArray[iChain] = new NoUTurnSampler(target, chainLength,massMatrix, sizeLeapFrog, rng) ;
-      //chainArray[iChain] = new DualAveragingNuts(target, chainLength, massMatrix, nAdaptive, rng) ;
-      //chainArray[iChain].setNThin(50);
-      SimpleMatrix initial = new SimpleMatrix(nDim, 1);
-      for (int i=0; i<nDim; i++) {
-        initial.set(i, rng.nextGaussian());
+      //instantiate a chain
+      //Mcmc chain = new MixtureAdaptiveRwmh(target, chainLength, proposalCovariance, rng);
+      //Mcmc chain = new HamiltonianMonteCarlo(target, chainLength, massMatrix, sizeLeapFrog, nLeapFrog, rng) ;
+      Mcmc chain = new NoUTurnSampler(target, chainLength,massMatrix, sizeLeapFrog, rng) ;
+      //Mcmc chain = new DualAveragingNuts(target, chainLength, massMatrix, nAdaptive, rng) ;
+      //for not the first chain, set the initial point using a random point from the first chain
+      if (iChain != 0) {
+        //use random point from the first chain as the initial value
+        nIndex = rng.nextInt(chainLength);
+        for (int iDim=0; iDim<target.getNDim(); iDim++) {
+          initialValue[iDim] = mcmcArray[0].getChain()[nIndex*target.getNDim()+iDim];
+        }
+        chain.setInitialValue(initialValue);
       }
-      initial = initialPositionScale.mult(initial);
-      chainArray[iChain].setInitialValue(initial.getDDRM().getData());
-      chainArray[iChain].run();
-      
-      chainArray[iChain].calculatePosteriorStatistics(0);
-      System.out.println(chainArray[iChain].getMonteCarloError()[0]);
+      //run the chain and save it
+      chain.run();
+      mcmcArray[iChain] = chain;
     }
-    System.out.println("efficency = "+chainArray[0].getEfficiency(0));
-    double [] acf = chainArray[0].getAcf(0, 100);
-    for (int i=0; i<100; i++) {
-      System.out.println(acf[i]);
-    }
-    System.out.println("end acf");
-    //chainArray[0] =  new HomogeneousRwmh((HomogeneousRwmh)chainArray[0], 759);
-    //chainArray[0].run();
-    
-    for (int iChain=0; iChain<nChain; iChain++) {
-      Plot2DPanel tracePlot = new Plot2DPanel();
-      double [] trace = chainArray[iChain].getChain(0);
-      tracePlot.addLinePlot("trace",trace);
-      
-       // put the PlotPanel in a JFrame, as a JPanel
-      JFrame frame = new JFrame("a plot panel");
-      frame.setContentPane(tracePlot);
-      frame.setSize(800, 600);
-      frame.setVisible(true);
-      
-      Plot2DPanel acceptPlot = new Plot2DPanel();
-      double [] acceptArray = chainArray[iChain].getAcceptanceRate();
-      acceptPlot.addLinePlot("accept",acceptArray);
-      
-       // put the PlotPanel in a JFrame, as a JPanel
-      JFrame acceptFrame = new JFrame("a plot panel");
-      acceptFrame.setContentPane(acceptPlot);
-      acceptFrame.setSize(800, 600);
-      acceptFrame.setVisible(true);
-      
-      for (int i=0; i<20; i++) {
-        System.out.println(chainArray[iChain].getBatchAcf(20)[i]);
-      }
+    //plot trace plot for each chain
+    for (int i=0; i<nChain; i++) {
+      JyPlot tracePlot = new JyPlot();
+      tracePlot.figure();
+      tracePlot.plot(mcmcArray[i].getChain(0));
+      tracePlot.xlabel("number of iterations");
+      tracePlot.ylabel("sample");
+      tracePlot.show();
+      tracePlot.exec();
     }
     
+    //get the gelman rubin statistic
+    //plot 2,3,...,nBurnInMax vs F
+    int nBurnInMax = 2000;
+    GelmanRubinF fStat = new GelmanRubinF(mcmcArray);
+    double [] nBurnIn = new double [nBurnInMax-1];
+    for (int i=0; i<nBurnIn.length; i++) {
+      nBurnIn[i] = (double)(i+2);
+    }
+    JyPlot fPlot = new JyPlot();
+    fPlot.figure();
+    fPlot.plot(nBurnIn, fStat.getGelmanRubinFArray(0, nBurnInMax));
+    fPlot.xlabel("burn-in");
+    fPlot.ylabel("F statistic");
+    fPlot.show();
+    fPlot.exec();
     
+    //plot acceptance rate
+    JyPlot acceptancePlot = new JyPlot();
+    acceptancePlot.figure();
+    acceptancePlot.plot(mcmcArray[0].getAcceptanceRate());
+    acceptancePlot.xlabel("number of iterations");
+    acceptancePlot.ylabel("acceptance rate");
+    acceptancePlot.show();
+    acceptancePlot.exec();
+    
+    
+    //plot autocorrelation
+    int nLag = 100;
+    double [] lag = new double[nLag];
+    for (int i=0; i<nLag; i++) {
+      lag[i] = (double)(i);
+    }
+    JyPlot autoCorrelationPlot = new JyPlot();
+    autoCorrelationPlot.figure();
+    autoCorrelationPlot.stem(lag, mcmcArray[0].getAcf(0, nLag));
+    autoCorrelationPlot.hlines(1/Math.sqrt(chainLength), 0, nLag-1, "r");
+    autoCorrelationPlot.hlines(-1/Math.sqrt(chainLength), 0, nLag-1, "r");
+    autoCorrelationPlot.xlabel("lag");
+    autoCorrelationPlot.ylabel("autocorrelation");
+    autoCorrelationPlot.show();
+    autoCorrelationPlot.exec();
+    
+    //plot autocorrelation of the batch
+    nLag = 10;
+    lag = new double[nLag];
+    for (int i=0; i<nLag; i++) {
+      lag[i] = (double)(i);
+    }
+    JyPlot batchAcfPlot = new JyPlot();
+    batchAcfPlot.figure();
+    batchAcfPlot.stem(lag, mcmcArray[0].getBatchAcf(nLag));
+    batchAcfPlot.hlines(1/Math.sqrt(Math.sqrt(chainLength)), 0, nLag-1, "r");
+    batchAcfPlot.hlines(-1/Math.sqrt(Math.sqrt(chainLength)), 0, nLag-1, "r");
+    batchAcfPlot.xlabel("lag");
+    batchAcfPlot.ylabel("autocorrelation");
+    batchAcfPlot.show();
+    batchAcfPlot.exec();
+    
+    //print the efficiency for all chains
+    for (int i=0; i<nChain; i++) {
+      System.out.println("===Chain "+i+" ===");
+      //print the efficiency
+      System.out.println("efficiency = "+mcmcArray[i].getEfficiency(0));
+      //calculate the posterior statistics using burn in
+      mcmcArray[i].calculatePosteriorStatistics(0); //burn in of zero in this example
+      //print the monte carlo error
+      System.out.println("log precision = "+mcmcArray[i].getDifferenceLnError()[0]);
+      //print the mean
+      System.out.println("mean = "+mcmcArray[i].getPosteriorExpectation()[0]);
+      //print the variance
+      SimpleMatrix posteriorCovariance = new SimpleMatrix(mcmcArray[i].getNDim(),
+          mcmcArray[i].getNDim(), true, mcmcArray[i].getPosteriorCovariance());
+      System.out.println("error = "+Math.sqrt(posteriorCovariance.get(0, 0)));
+      
+    }
   }
   
   
