@@ -3,12 +3,13 @@
 **Java** implementations of the **Metropolis-Hastings** (Metropolis et al., 1953) (Hastings, 1970), **Adaptive Metropolis-Hastings** (Haario et al., 2001) (Roberts and Rosenthal, 2009), **Hamiltonian Monte Carlo** (Neal, 2011) and **No U-Turn Sampler** (Hoffman and Gelman, 2014).
 
 There exist 2 branches. The [master branch](https://github.com/shermanip/oxwasp_exchange_mcmc) only contains Java implements of the MCMC algorithms and requires the following libraries
-* org.ejml [Efficient Java Matrix Library](http://ejml.org/wiki/index.php?title=Main_Page)
+* aliceinnets.python.jyplot.JyPlot [java-jyplot](https://github.com/aliceinnets/java-jyplot)
 * org.apache.commons.math3 [Commons Math: The Apache Commons Mathematics Library](http://commons.apache.org/proper/commons-math/)
+* org.ejml [Efficient Java Matrix Library](http://ejml.org/wiki/index.php?title=Main_Page)
 
 The [processing branch](https://github.com/shermanip/oxwasp_exchange_mcmc/tree/processing) is for visualising MCMC in Processing and requires the following libraries
-* processing.core.PApplet [Processing](https://processing.org/)
 * g4p_controls [G4P (GUI for processing)](http://www.lagers.org.uk/g4p/)
+* processing.core.PApplet [Processing](https://processing.org/)
 
 The [ccfe branch](https://github.com/shermanip/oxwasp_exchange_mcmc/tree/ccfe) requires software and data which is only available to staff at the Culham Centre for Fusion Energy.
 
