@@ -325,6 +325,7 @@ public class RunVoEqui {
 				tracePlot.plot(mcmcArray[i].getChain(dimOfInterest));
 				tracePlot.xlabel("number of iterations");
 				tracePlot.ylabel("current density (kA.m^{-2})");
+				tracePlot.ylim(-5020,-4900);
 				tracePlot.show();
 				tracePlot.exec();
 			}
@@ -342,6 +343,7 @@ public class RunVoEqui {
 			fPlot.plot(nBurnIn, fStat.getGelmanRubinFArray(dimOfInterest, nBurnInMax));
 			fPlot.xlabel("burn-in");
 			fPlot.ylabel("F statistic");
+			fPlot.ylim(0,20);
 			fPlot.show();
 			fPlot.exec();
 			
