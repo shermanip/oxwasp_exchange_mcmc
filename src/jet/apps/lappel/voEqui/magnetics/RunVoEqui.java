@@ -325,7 +325,7 @@ public class RunVoEqui {
 				tracePlot.plot(mcmcArray[i].getChain(dimOfInterest));
 				tracePlot.xlabel("number of iterations");
 				tracePlot.ylabel("current density (kA.m^{-2})");
-				tracePlot.ylim(-5020,-4900);
+				tracePlot.ylim(-5030,-4890);
 				tracePlot.show();
 				tracePlot.exec();
 			}
