@@ -23,6 +23,7 @@ import org.ejml.dense.row.MatrixFeatures_DDRM;
 import org.ejml.dense.row.factory.DecompositionFactory_DDRM;
 import org.ejml.interfaces.decomposition.CholeskyDecomposition_F64;
 import org.ejml.simple.SimpleMatrix;
+import processing.core.PApplet;
 
 /**GLOBAL
  * Example code for MCMC targetting a Normal with random covariance
@@ -34,9 +35,10 @@ public class Global {
 
   public static void main(String[] args) {
 
-    if (args.length == 0) {
-      uk.ac.warwick.sip.mcmcprocessing.Menu.main(args);
-    } else {
+    System.out.println("Apache License - please see LICENSE");
+    System.out.println("Copyright (c) 2018-2020 Sherman Lo");
+    System.out.println("Please see https://github.com/shermanlo77/oxwasp_exchange_mcmc or README.md");
+    if (args.length == 1) {
       String userArg = args[0];
       if (userArg.equals("-bm")) {
         uk.ac.warwick.sip.mcmcprocessing.BrownianMotion.main(args);

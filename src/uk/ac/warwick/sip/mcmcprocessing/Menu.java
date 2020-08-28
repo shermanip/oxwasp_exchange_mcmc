@@ -30,6 +30,8 @@ public class Menu extends PApplet {
   //buttons for the difference mcmc
   private HashMap<String, String> mcmcNameMap;
   private HashMap<String, GButton> buttonMap;
+  private String[] args;
+  private boolean isMadeSelection = false;
 
 
   /**OVERRIDE: SETTINGS
@@ -90,21 +92,34 @@ public class Menu extends PApplet {
     if (event == GEvent.CLICKED) {
       for (int i=0; i<KEYS.length; i++) {
         if (button == buttonMap.get(KEYS[i])) {
-          String[] args = new String[1];
-          args[0] = KEYS[i];
-          mainAndDestroy(args, this);
+          this.args = new String[1];
+          this.args[0] = KEYS[i];
+          this.isMadeSelection = true;
         }
       }
     }
   }
 
-  private static void mainAndDestroy(String[] args, PApplet menu) {
-    menu.exit();
-    uk.ac.warwick.sip.mcmc.Global.main(args);
+  public boolean isMadeSelection() {
+    return this.isMadeSelection;
   }
 
-  public static void main() {
-    PApplet.main("uk.ac.warwick.sip.mcmcprocessing.Menu");
+  public String[] getArgs() {
+    return this.args;
+  }
+
+  public static void main(String[] args) {
+    Menu menu = new uk.ac.warwick.sip.mcmcprocessing.Menu();
+    String[] name = {"uk.ac.warwick.sip.mcmcprocessing.Menu"};
+    PApplet.runSketch(name, menu);
+    while (true) {
+      if (menu.isMadeSelection()) {
+        args = menu.getArgs();
+        menu.exit();
+        uk.ac.warwick.sip.mcmc.Global.main(args);
+        break;
+      }
+    }
   }
 
 }

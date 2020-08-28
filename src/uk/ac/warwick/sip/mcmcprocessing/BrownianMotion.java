@@ -63,7 +63,7 @@ public class BrownianMotion extends McmcApplet{
   }
 
 
-  public static void main() {
+  public static void main(String[] args) {
     PApplet.main("uk.ac.warwick.sip.mcmcprocessing.BrownianMotion");
   }
 
