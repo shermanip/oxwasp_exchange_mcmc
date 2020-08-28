@@ -37,13 +37,10 @@ public class Global {
     int chainLength = 100000;
     MersenneTwister rng = new MersenneTwister(-280845742);
     SimpleMatrix targetCovariance = Global.getRandomCovariance(nDim, rng);
-    SimpleMatrix proposalCovariance = targetCovariance.scale(Math.pow(0.001, 2)/((double)nDim));
     SimpleMatrix massMatrix = SimpleMatrix.identity(nDim);
     massMatrix = massMatrix.scale(1.0);
-    int nLeapFrog = 100;
     double sizeLeapFrog = 0.5;
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
-    int nAdaptive = 100;
     
     //for rubin-gelman, need to run additional chains
     int nChain = 5;

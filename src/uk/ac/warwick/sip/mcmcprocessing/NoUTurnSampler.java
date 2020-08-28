@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package uk.ac.warwick.sip.mcmcProcessing;
+package uk.ac.warwick.sip.mcmcprocessing;
 
 import java.util.Iterator;
 
@@ -27,12 +27,12 @@ import uk.ac.warwick.sip.mcmc.TargetDistribution;
  * Simulation for NUTS, click to start a chain
  */
 public class NoUTurnSampler extends McmcApplet{
-  
+
   //chain to simulate (hides the super class version)
   uk.ac.warwick.sip.mcmc.NoUTurnSampler chain;
-  
+
   protected TargetDistribution target;
-  
+
   /**OVERRIDE: SETUP
    * Set target distribution
    */
@@ -41,7 +41,7 @@ public class NoUTurnSampler extends McmcApplet{
     super.setup();
     this.target = this.getNormalDistribution();
   }
-  
+
   /**OVERRIDE: DRAW MCMC
    * Draw all samples except for the last one
    * Draw leap frog steps
@@ -49,12 +49,12 @@ public class NoUTurnSampler extends McmcApplet{
    */
   @Override
   protected void drawMcmc() {
-    
+
     float x1, x2, y1, y2;
     double [] chainArray = this.chain.getChain();
     //draw all the samples except for the last one
     this.drawAllButLastSamples();
-    
+
     //if the sample is accepted
     if (this.chain.getIsAccepted()) {
       //in yellow
@@ -88,7 +88,7 @@ public class NoUTurnSampler extends McmcApplet{
       this.ellipse(x2, y2 , CIRCLE_SIZE, CIRCLE_SIZE);
     }
   }
-  
+
   /**OVERRIDE: MOUSE RELEASED
    * Instantiate a new chain, if the mouse of not or clicked on a gui
    */
@@ -113,10 +113,10 @@ public class NoUTurnSampler extends McmcApplet{
     }
     super.mouseReleased();
   }
-  
-  
+
+
   public static void main(String[] args) {
-    PApplet.main("uk.ac.warwick.sip.mcmcProcessing.NoUTurnSampler");
+    PApplet.main("uk.ac.warwick.sip.mcmcprocessing.NoUTurnSampler");
   }
-  
+
 }

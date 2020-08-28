@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package uk.ac.warwick.sip.mcmcProcessing;
+package uk.ac.warwick.sip.mcmcprocessing;
 
 import org.ejml.simple.SimpleMatrix;
 
@@ -28,7 +28,7 @@ import uk.ac.warwick.sip.mcmc.NormalDistribution;
  * Template for MCMC simulation on a Processing applet
  */
 public abstract class McmcApplet extends PApplet{
-  
+
   static public final double NORMAL_TARGET_VARIANCE = 40000.0; //variance of the Gaussian target
   static public final double PROPOSAL_VARIANCE = 113288.0; //optimal variance
   static public final double MASS_HMC = 40000.0; //diagonal element for the mass matrix for HMC
@@ -39,23 +39,23 @@ public abstract class McmcApplet extends PApplet{
   //background colours for unpaused and paused
   static public final int [] UNPAUSED_COLOUR = {0,0,0};
   static public final int [] PAUSED_COLOUR = {0,33,71};
-  
+
   protected uk.ac.warwick.sip.mcmc.Mcmc chain; //the chain to simulate
-  
+
   protected boolean isPaused = false; //indicate if the program is paused
   protected boolean isToTakeStep = true; //indicate if the MCMC is to take a step
-  
+
   protected boolean isInit = false; //indicate if a chain has been instantiated
   protected boolean isDrawNormalContour = false; //indicate to draw the contour for the target
-  
+
   //GUI buttons
   protected GButton pauseButton;
   protected GButton stepButton;
   protected GButton quitButton;
-  
+
   //indicate if the mouse clicked on a button or another GUI
   protected boolean isMouseClickOnGui = false;
-  
+
   /**OVERRIDE: SETTINGS
    * Set the size of the applet
    */
@@ -63,9 +63,9 @@ public abstract class McmcApplet extends PApplet{
   public void settings() {
     this.fullScreen();
   }
-  
+
   /**OVERRIDE: SETUP
-   * Instantiate the GUI  
+   * Instantiate the GUI
    */
   @Override
   public void setup() {
@@ -73,7 +73,7 @@ public abstract class McmcApplet extends PApplet{
     this.stepButton = new GButton(this, 10,80,50,50,"step");
     this.quitButton = new GButton(this, 10, this.height-80, 50, 50, "quit");
   }
-  
+
   /**OVERRIDE: DRAW
    * Draw at every frame
    */
@@ -91,7 +91,7 @@ public abstract class McmcApplet extends PApplet{
     }
     //draw GUI other than the member variables
     this.drawOtherGui();
-    
+
     //if a chain has been instantiate, draw it
     if (this.isInit) {
       this.drawMcmc();
@@ -106,19 +106,19 @@ public abstract class McmcApplet extends PApplet{
       }
     }
   }
-  
+
   /**METHOD: DRAW OTHER GUI
    * To be implemented, draws right after background and before the MCMC
    */
   protected void drawOtherGui(){
     //does nothing
   }
-  
+
   /**ABSTRACT: DRAW MCMC
    * Draw the MCMC chain, this is drawn after the background and drawOtherGUI
    */
   protected abstract void drawMcmc();
-  
+
   /**METHOD: DRAW ALL SAMPLES
    * Draws all the MCMC samples
    * @return 2 vector, last sample
@@ -148,7 +148,7 @@ public abstract class McmcApplet extends PApplet{
     lastSample[1] = y1;
     return lastSample;
   }
-  
+
   /**METHOD: DRAW ALL BUT LAST SAMPLES
    * Draws all the MCMC samples except for the last one
    * @return 2 vector, 2nd last sample
@@ -172,14 +172,14 @@ public abstract class McmcApplet extends PApplet{
       x1 = x2;
       y1 = y2;
     }
-    
+
     //save and return the 2nd last sample
     double [] lastSample = new double[2];
     lastSample[0] = x1;
     lastSample[1] = y1;
     return lastSample;
   }
-  
+
   /**METHOD: GET NORMAL DISTRIBUTION
    * @return Normal distribution
    */
@@ -193,7 +193,7 @@ public abstract class McmcApplet extends PApplet{
     SimpleMatrix mean = new SimpleMatrix(2, 1, true, this.getCentre());
     return new NormalDistribution(2, mean, targetCovariance);
   }
-  
+
   /**METHOD: GET CENTRE
    * @return 2 vector of the centre of the applet
    */
@@ -203,7 +203,7 @@ public abstract class McmcApplet extends PApplet{
     centre[1] = ((double)this.height)/2;
     return centre;
   }
-  
+
   /**METHOD: DRAW NORMAL CONTOUR
    * Draw the contours of the Normal distribution
    */
@@ -214,7 +214,7 @@ public abstract class McmcApplet extends PApplet{
     this.stroke(255,255,255);
     this.noFill();
     double [] meanVector = this.getCentre();
-    
+
     //cdf to plot
     double pSpacing = 0.5 /  ((double)(N_CONTOUR+1));
     double cdf = 0.5 + pSpacing;
@@ -225,9 +225,9 @@ public abstract class McmcApplet extends PApplet{
       cdf += pSpacing;
       this.ellipse((float)meanVector[0], (float)meanVector[1], contourDiameter, contourDiameter);
     }
-    
+
   }
-  
+
   /**METHOD: HANDLE BUTTON EVENTS
    * See G4P library, called when a button has been interacted
    * @param button Interacted button
@@ -236,7 +236,7 @@ public abstract class McmcApplet extends PApplet{
   public void handleButtonEvents(GButton button, GEvent event) {
     //when a button has been clicked
     if (event == GEvent.CLICKED) {
-      //for the pause button, 
+      //for the pause button,
       if (button == this.pauseButton) {
         //invert isPaused and set isToTakeStep accordingly
         this.isPaused = !this.isPaused;
@@ -250,7 +250,7 @@ public abstract class McmcApplet extends PApplet{
       }
     }
   }
-  
+
   /**METHOD: IS MOUSE ON GUI
    * Find out if the mouse if over any of the instantiated GUI
    * Subclasses overriding this should call this in addition
@@ -268,7 +268,7 @@ public abstract class McmcApplet extends PApplet{
     }
     return isMouseOnGui;
   }
-  
+
   /**METHOD: MOUSE PRESSED
    * If the mouse is clicked on a gui, indicate the program so
    * Subclasses overriding this method should call this
@@ -278,7 +278,7 @@ public abstract class McmcApplet extends PApplet{
       this.isMouseClickOnGui = true;
     }
   }
-  
+
   /**METHOD: MOUSE RELEASED
    * The mouse has been clicked, set isMouseClickOnGui to false
    * Subclasses overriding this method should call this, at the end of the method, is this because
@@ -287,5 +287,5 @@ public abstract class McmcApplet extends PApplet{
   public void mouseReleased() {
     this.isMouseClickOnGui = false;
   }
-  
+
 }

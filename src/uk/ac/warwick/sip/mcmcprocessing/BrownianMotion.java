@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package uk.ac.warwick.sip.mcmcProcessing;
+package uk.ac.warwick.sip.mcmcprocessing;
 
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.simple.SimpleMatrix;
@@ -25,11 +25,11 @@ import uk.ac.warwick.sip.mcmc.UniformDistribution;
  * Simulation of brownian motion, click to instantiate a particle
  */
 public class BrownianMotion extends McmcApplet{
-  
+
   //for brownian motion, use uniform target
   static public final UniformDistribution UNIFORM_DISTRIBUTION = new UniformDistribution(2);
   static public final double PROPOSAL_VARIANCE = 1000.0;
-  
+
   /**IMPLEMENTED: DRAW MCMC
    * Draw all samples
    */
@@ -37,7 +37,7 @@ public class BrownianMotion extends McmcApplet{
   protected void drawMcmc() {
     this.drawAllSamples();
   }
-  
+
   /**OVERRIDE: MOUSE RELEASED
    * Instantiate a new brownian motion
    */
@@ -50,7 +50,7 @@ public class BrownianMotion extends McmcApplet{
         double [] mousePosition = new double [2];
         mousePosition[0] = (double) this.mouseX;
         mousePosition[1] = (double) this.mouseY;
-        
+
         //instantiate new brownian motion
         MersenneTwister rng = new MersenneTwister(this.millis());
         this.chain = new uk.ac.warwick.sip.mcmc.RandomWalkMetropolisHastings(UNIFORM_DISTRIBUTION,
@@ -61,10 +61,10 @@ public class BrownianMotion extends McmcApplet{
     }
     super.mouseReleased();
   }
-  
-  
+
+
   public static void main(String[] args) {
-    PApplet.main("uk.ac.warwick.sip.mcmcProcessing.BrownianMotion");
+    PApplet.main("uk.ac.warwick.sip.mcmcprocessing.BrownianMotion");
   }
-  
+
 }

@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package uk.ac.warwick.sip.mcmcProcessing;
+package uk.ac.warwick.sip.mcmcprocessing;
 
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.simple.SimpleMatrix;
@@ -31,19 +31,19 @@ import uk.ac.warwick.sip.mcmc.TargetDistribution;
  * Slider bar can adjust the number of leap frog steps per HMC step
  */
 public class HamiltonianMonteCarlo extends McmcApplet{
-  
+
   //chain to simulate (hides the super class version)
   uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo chain;
-  
+
   //target distribution
   protected TargetDistribution target;
   //keep tracks of the number of leap frog step
   //values shouldn't be extracted the slider as it will change during pause
   protected int nLeapFrog = 10;
-  
+
   //gui to adjust the number of leap frog steps
   protected GSlider nLeapFrogSlider;
-  
+
   /**OVERRIDE: SETUP
    * Set the GUI for the slider
    */
@@ -51,7 +51,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
   public void setup() {
     super.setup();
     target = this.getNormalDistribution();
-    
+
     //instantiate slider bar
     this.nLeapFrogSlider = new GSlider(this, 110, 150, 300, 150, 30);
     this.nLeapFrogSlider.setRotation(HALF_PI);
@@ -64,7 +64,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
     this.nLeapFrogSlider.setShowTicks(true);
     this.nLeapFrogSlider.setNumberFormat(G4P.INTEGER, 0);
   }
-  
+
   /**IMPLEMENTED: DRAW MCMC
    * Draw all samples except for the last one
    * Draw all the leap frog steps to the last sample
@@ -76,7 +76,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
     float x1, y1, x2, y2;
     x1 = (float) secondLastSample[0];
     y1 = (float) secondLastSample[1];
-    
+
     //for an accept step, draw all the leap frog steps
     if (this.chain.getIsAccepted()) {
       //yellow
@@ -94,14 +94,14 @@ public class HamiltonianMonteCarlo extends McmcApplet{
         y1 = y2;
       }
     }
-    
+
     //if a step is to be taken, update nLeapFrog with the slider
     //this is required as the slider can move when paused
     if (this.isToTakeStep) {
       this.nLeapFrog = this.nLeapFrogSlider.getValueI();
     }
   }
-  
+
   /**OVERRIDE: IS MOUSE ON GUI
    * Update the method to indicate if the mouse is over a GUI
    */
@@ -113,22 +113,22 @@ public class HamiltonianMonteCarlo extends McmcApplet{
     }
     return isMouseOnGui;
   }
-  
+
   /**OVERRIDE: MOUSE RELEASED
    * Instantiate HMC chain, if the mouse hasn't clicked on a gui, or on a gui, instantiate HMC
    */
   @Override
   public void mouseReleased() {
-    
+
     //if the mouse hasn't clicked on a gui, or on a gui, instantiate HMC
     if (!this.isMouseClickOnGui) {
       if (!this.isMouseOnGui()) {
-        
+
         //get mouse coordinate
         double [] mousePosition = new double [2];
         mousePosition[0] = (double) this.mouseX;
         mousePosition[1] = (double) this.mouseY;
-        
+
         //instantiate HMC
         MersenneTwister rng = new MersenneTwister(this.millis());
         this.chain = new uk.ac.warwick.sip.mcmc.HamiltonianMonteCarlo(this.target
@@ -142,7 +142,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
     }
     super.mouseReleased();
   }
-  
+
   /**METHOD: HANDLE SLIDER EVENTS
    * See G4P library, called when a slider bar has been interacted
    * @param slider The slider which has been interacted
@@ -160,9 +160,9 @@ public class HamiltonianMonteCarlo extends McmcApplet{
       }
     }
   }
-  
+
   public static void main(String[] args) {
-    PApplet.main("uk.ac.warwick.sip.mcmcProcessing.HamiltonianMonteCarlo");
+    PApplet.main("uk.ac.warwick.sip.mcmcprocessing.HamiltonianMonteCarlo");
   }
-  
+
 }

@@ -21,8 +21,6 @@ import java.lang.Math;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.decomposition.TriangularSolver_DDRM;
 import org.ejml.simple.SimpleMatrix;
-import uk.ac.warwick.sip.mcmc.TargetDistribution;
-import uk.ac.warwick.sip.mcmc.Global;
 
 /**CLASS: NORMAL DISTRIBUTION
  * Evaluates the multivariate Normal distribution pdf (up to a constant).

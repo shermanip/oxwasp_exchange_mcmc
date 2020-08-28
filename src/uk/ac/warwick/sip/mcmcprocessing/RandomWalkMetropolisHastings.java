@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package uk.ac.warwick.sip.mcmcProcessing;
+package uk.ac.warwick.sip.mcmcprocessing;
 
 import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.simple.SimpleMatrix;
@@ -31,20 +31,20 @@ import uk.ac.warwick.sip.mcmc.TargetDistribution;
  * Click and drag to instantiate a chain, longer drag for bigger proposal
  */
 public class RandomWalkMetropolisHastings extends McmcApplet{
-  
+
   //chain to run (this hides the super class version)
   uk.ac.warwick.sip.mcmc.MixtureAdaptiveRwmh chain;
-  
+
   //target distribution is normal
   protected TargetDistribution target;
   //indicate if the mouse is being dragged and setting the proposal variance
   protected boolean isCreatingChain = false;
   //position of the mouse when it is clicked
   protected double [] clickPosition = new double[2];
-  
+
 //gui for toggling adapting
   protected GCheckbox adaptiveCheckBox;
-  
+
   /**OVERRIDE: SETUP
    * Set the target and the GUI for toggle adaptive option
    */
@@ -55,7 +55,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
     this.adaptiveCheckBox = new GCheckbox(this, 12,150,75,40,"Adaptive"); //set position and size
     this.adaptiveCheckBox.setLocalColorScheme(255); //set colour
   }
-  
+
   /**IMPLEMENTED: DRAW MCMC
    * Draw all samples in green, draw rejected samples in red
    */
@@ -80,7 +80,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
       }
     }
   }
-  
+
   /**OVERRIDE: DRAW OTHER GUI
    * Draw a circle, centred where the mouse is pressed, mouse at the moment touches the circle
    * This indicates the size of the proposal
@@ -94,7 +94,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
       this.ellipse((float)this.clickPosition[0], (float)this.clickPosition[1], 2*radius, 2*radius);
     }
   }
-  
+
   /**METHOD: GET MOUSE DRAG DISTANCE
    * Calculate the distance between where the mouse is pressed, to the current mouse position
    * @return Distance from where the mouse is pressed, to the current mouse position
@@ -110,7 +110,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
       return r.mag();
     }
   }
-  
+
   /**OVERRIDE: IS MOUSE ON GUI
    * Update the method to indicate if the mouse is over the check box
    */
@@ -122,7 +122,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
     }
     return isMouseOnGui;
   }
-  
+
   /**OVERRIDE: MOUSE PRESSED
    * If the mouse isn't pressed on a gui, record where it is click and begin to create a chain
    * The proposal variance depends on the mouse drag distance
@@ -136,7 +136,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
       this.clickPosition[1] = (double) this.mouseY;
     }
   }
-  
+
   /**OVERRIDE: MOUSE RELEASED
    * If the mouse hasn't been clicked on a gui, instantiate a chain, mouse drag distance correspond
    * to the proposal std
@@ -165,7 +165,7 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
     this.isCreatingChain = false;
     super.mouseReleased();
   }
-  
+
   /**METHOD: HANDLE TOGGLE CONTROL EVENTS
    * See G4P library, called when a checkbox has been interacted
    * @param checkbox The checkbox being interacted
@@ -180,10 +180,10 @@ public class RandomWalkMetropolisHastings extends McmcApplet{
       }
     }
   }
-  
-  
+
+
   public static void main(String[] args) {
-    PApplet.main("uk.ac.warwick.sip.mcmcProcessing.RandomWalkMetropolisHastings");
+    PApplet.main("uk.ac.warwick.sip.mcmcprocessing.RandomWalkMetropolisHastings");
   }
-  
+
 }
