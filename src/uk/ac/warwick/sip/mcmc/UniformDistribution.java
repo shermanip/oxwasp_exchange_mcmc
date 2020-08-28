@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ import org.ejml.simple.SimpleMatrix;
  *
  */
 public class UniformDistribution extends TargetDistribution{
-  
+
   /**CONSTRUCTOR
    * @param nDim Number of dimensions
    */
   public UniformDistribution(int nDim) {
     super(nDim);
   }
-  
+
   /**IMPLEMENT: GET PDF
    * Evaluate the probability density function at x
    * The pdf needs not to be normalised, ie integrate to 1
@@ -43,7 +43,7 @@ public class UniformDistribution extends TargetDistribution{
   public double getPdf(SimpleMatrix x) {
     return 1.0;
   }
-  
+
   /**IMPLEMENT: GET POTENTIAL
    * Evaluate the -ln pdf + some constant
    * The constant comes from the face the pdf is evaluated up to a constant
@@ -54,7 +54,7 @@ public class UniformDistribution extends TargetDistribution{
   public double getPotential(SimpleMatrix x) {
     return 0.0;
   }
-  
+
   /**METHOD: GET D POTENTIAL
    * Evaluate the differential of -ln pdf
    * @param x Where to evaluate the potential gradient
@@ -64,7 +64,7 @@ public class UniformDistribution extends TargetDistribution{
   public SimpleMatrix getDPotential(SimpleMatrix x) {
     //return a vector of zeros
     return new SimpleMatrix(this.nDim, 1);
-    
+
   }
-  
+
 }

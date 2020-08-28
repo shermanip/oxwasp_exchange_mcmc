@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import org.ejml.simple.SimpleMatrix;
 import uk.ac.warwick.sip.mcmc.NoUTurnSampler.Tree;
 
 public class Test {
-  
+
   static PrintWriter printWriter;
-  
+
   static public void main(String[] args) {
-    
+
     try {
       printWriter = new PrintWriter("test.txt");
       testChain(10, 1000, 3, 1964976895, "Test 1.1");
@@ -62,10 +62,10 @@ public class Test {
       printWriter.flush();
       printWriter.close();
     } catch (Exception expection) {
-      
+
     }
   }
-  
+
   /**FUNCTION: GET CHAIN
    * Return one implementation of a MCMC
    * @param iChain Integer pointing to which mcmc to instantiate
@@ -78,16 +78,16 @@ public class Test {
     //simple Normal target with identity covariance
     SimpleMatrix targetCovariance = SimpleMatrix.identity(nDim);
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
-    
+
     //rwmh parameters
     SimpleMatrix proposalCovariance = targetCovariance.scale( Math.pow(2.38,2) / ((double)nDim) );
-    
+
     //hmc parameters
     SimpleMatrix massMatrix = SimpleMatrix.identity(nDim);
     int nLeapFrog = 20;
     double sizeLeapFrog = 0.5;
     int nAdaptive = 100;
-      
+
     //instantiate the chain
     Mcmc chain = null;
     switch (iChain) {
@@ -115,7 +115,7 @@ public class Test {
     }
     return chain;
   }
-  
+
   /**FUNCTION: COPY CONSTRUCTOR
    * Calls the chain's copy and extend constructor
    * @param iChain Pointer to the class of the object
@@ -149,7 +149,7 @@ public class Test {
     }
     return chain;
   }
-  
+
   /**FUNCTION: TEST CHAIN
    * Test the member variables chainMean and chainCovariance, these are recursive estimators.
    * The recursive estimators are comapred with the non-recursive estimators.
@@ -165,41 +165,41 @@ public class Test {
    */
   static void testChain(int nDim, int chainLength, int nStep,
       int seed, String name) {
-    
+
     printWriter.println("==========");
     printWriter.println(name);
-    
+
     //for each mcmc class
     for (int iMcmc=0; iMcmc<6; iMcmc++) {
-      
+
       boolean isNStep = true; //tests if nStep increments
       boolean isNSample = true; //tests if nSample increments
       boolean isAllocation = true; //tests if the sample has been allocated to chainArray correctly
-      
+
       //random number generator
       MersenneTwister rng = new MersenneTwister(seed);
-      
+
       Mcmc chain = getChain(iMcmc, nDim, chainLength, rng);
-      
+
       //set random initial value
       double [] initial = getRandomVector(nDim, rng).getDDRM().getData();
       chain.setInitialValue(initial);
-      
+
       //instantiate column vector for the current value of the chain
       SimpleMatrix x = chain.chainArray.extractVector(true, 0);
       CommonOps_DDRM.transpose(x.getDDRM());
-      
+
       //run the chain for nStep
       for (int i=0; i<nStep; i++) {
-        
+
         //copy x to for allocation test
         SimpleMatrix xBefore = new SimpleMatrix(x);
-        
+
         //do mcmc step
         chain.step(x);
         //save x to the chain array
         chain.setCurrentStep(x);
-        
+
         //check if chain.nStep has been incremented
         if (chain.nStep != (i+1)) {
           isNStep = false;
@@ -225,40 +225,40 @@ public class Test {
               isAllocation = false;
             }
           }
-          
+
         }
-        
+
       }
-      
+
       //declare array for storing squared error
       //entry one for the mean
       //entry two for the covariance
       double [] squaredErrorArray = new double [2];
-      
+
       //get the mcmc samples after nStep
       SimpleMatrix designMatrix = chain.chainArray.extractMatrix(0, nStep+1, 0, nDim);
-      
+
       //work out the sample mean and get and save the squared error
       SimpleMatrix sampleMean = getSampleMean(designMatrix);
       SimpleMatrix squaredError = (chain.chainMean.minus(sampleMean)).elementPower(2);
       squaredErrorArray[0] = squaredError.elementSum();
-      
+
       //work out the sample covariance, get and save the squared error
       SimpleMatrix sampleCovariance = getSampleCovariance(designMatrix, sampleMean);
       squaredError = (chain.chainCovariance.minus(sampleCovariance)).elementPower(2);
       squaredErrorArray[1] = squaredError.elementSum();
-      
+
       //print the squared error and return it
       printWriter.println(chain.getClass().getName());
       printWriter.println("Squared error in mean = "+squaredErrorArray[0]);
       printWriter.println("Squared error in covariance = "+squaredErrorArray[1]);
-      
+
       printWriter.println("pass nStep test = "+isNStep);
       printWriter.println("pass nSample test = "+isNSample);
       printWriter.println("pass allocation test = "+isAllocation);
     }
   }
-  
+
   /**FUNCTION: GET SAMPLE MEAN
    * Returns the unbiased estimator of the mean
    * @param designMatrix Collection of data, rows represent each data
@@ -277,7 +277,7 @@ public class Test {
     }
     return sampleMean.divide((double)n);
   }
-  
+
   /**FUNCTION: GET SAMPLE COVARIANCE
    * Returns the unbiased estimator of the covariance
    * @param designMatrix Collection of data, rows represent each data,
@@ -301,11 +301,11 @@ public class Test {
     //this is the unbiased estimator
     return sampleCovariance.divide((double)(n - 1));
   }
-  
+
   /**FUNCTION: TEST CHOLESKY
    * Check if Global.cholesky() does not modify the parameter
    * Check if Global.cholesky() returns null
-   * Check if 
+   * Check if
    * @param nDim Number of dimension
    * @param seed Seed for Mersenne Twister
    * @param name Name of the test
@@ -337,7 +337,7 @@ public class Test {
       SimpleMatrix cholCholT = chol.mult(chol.transpose());
       double sumDiffSquared = cholCholT.minus(cov).elementPower(2).elementSum();
       printWriter.println("Squared error in Cholesky decomposition = "+sumDiffSquared);
-      
+
       //check if cholesky of chol of N(0,1) outputs null
       SimpleMatrix randGaussian = new SimpleMatrix(nDim, nDim);
       for (int i=0; i<randGaussian.getNumElements(); i++) {
@@ -351,9 +351,9 @@ public class Test {
     printWriter.println("pass no null test = "+isNoNull);
     printWriter.println("pass null test = "+isNull);
     printWriter.println("pass modify test = "+isNotModify);
-    
+
   }
-  
+
   /**FUNCTION: GET RANDOM VECTOR
    * @param nDim
    * @param rng
@@ -366,7 +366,7 @@ public class Test {
     }
     return x;
   }
-  
+
   /**FUNCTION: TEST ACCEPT STEP
    * Checks if the method acceptStep modifies its parameters accordingly
    * Checks if nAccept is incremented correctly
@@ -382,15 +382,15 @@ public class Test {
     int nTest = 100; //number of times to repeat the test
     boolean isModifyTest = true;
     boolean isNAcceptTest = true;
-    
+
     //for the rwmh family of mcmc
     for (int iChain=0; iChain<3; iChain++) {
-      
+
       Mcmc chain = null;
       for (int i=0; i<nTest; i++) {
-        
+
         chain = getChain(iChain, nDim, chainLength, rng);
-        
+
         //check with accept probability 0
         SimpleMatrix position = getRandomVector(nDim, rng);
         SimpleMatrix proposal = getRandomVector(nDim, rng);
@@ -408,7 +408,7 @@ public class Test {
         if (chain.nAccept != 0) {
           isNAcceptTest = false;
         }
-        
+
         //check with accept probability 1.0
         position = getRandomVector(nDim, rng);
         proposal = getRandomVector(nDim, rng);
@@ -426,7 +426,7 @@ public class Test {
         if (chain.nAccept != 1) {
           isNAcceptTest = false;
         }
-        
+
         //check with accept probability 1.0
         position = getRandomVector(nDim, rng);
         proposal = getRandomVector(nDim, rng);
@@ -449,15 +449,15 @@ public class Test {
           }
         }
       }
-      
+
       printWriter.println(chain.getClass().getName());
       printWriter.println("pass modify test = "+isModifyTest);
       printWriter.println("pass nAccept test = "+isNAcceptTest);
-      
+
     }
-    
+
   }
-  
+
   /**FUNCTION: TEST COPY AND EXTEND CONSTRUCTOR
    * Test the copy and extend constructor, runs 2 chains of chainLength, 1 stops at subChainLength
    * and then calls the copy and extend constructor to run the remaining steps
@@ -472,23 +472,23 @@ public class Test {
    */
   static void testCopyExtendConstructor(int nDim, int chainLength, int subChainLength,
       int seed, String name) {
-    
+
     printWriter.println("==========");
     printWriter.println(name);
-    
+
     //for the rwmh family of mcmc
     for (int iChain=0; iChain<6; iChain++) {
-      
+
       //boolean for the tests
       boolean isNStep = true;
       boolean isNSample = true;
       boolean isSame = true;
-      
+
       //get the chain and run it all the way
       MersenneTwister rng = new MersenneTwister(seed);
       Mcmc chain = getChain(iChain, nDim, chainLength, rng);
       chain.run();
-      
+
       //get the chain, run it for subChainLength, copy and extend, then run the remaining steps
       rng = new MersenneTwister(seed);
       Mcmc chainUseCopyConstructor = getChain(iChain, nDim, subChainLength, rng);
@@ -496,7 +496,7 @@ public class Test {
       chainUseCopyConstructor = copyConstructor(iChain, chainUseCopyConstructor,
           chainLength - subChainLength);
       chainUseCopyConstructor.run();
-      
+
       //check if nStep are the same
       if (chain.nStep != chainUseCopyConstructor.nStep) {
         isNStep = false;
@@ -509,15 +509,15 @@ public class Test {
       if (!chain.chainArray.isIdentical(chainUseCopyConstructor.chainArray,0)) {
         isSame = false;
       };
-      
+
       printWriter.println(chain.getClass().getName());
       printWriter.println("pass nStep test = "+isNStep);
       printWriter.println("pass nSample test = "+isNSample);
       printWriter.println("pass isSame test = "+isSame);
-      
+
     }
   }
-  
+
   /**FUNCTION: TEST THIN
    * Test how the chain behaves with thinning
    * Checks if the number of rows in chainArray is correct
@@ -532,20 +532,20 @@ public class Test {
   static void testThin(int nDim, int chainLength, int nThin, int seed, String name) {
     printWriter.println("==========");
     printWriter.println(name);
-    
+
     //for the rwmh family of mcmc
     for (int iChain=0; iChain<6; iChain++) {
       //boolean for the tests
       boolean isArrayHeight = true;
       boolean isNStep = true;
       boolean isNSample = true;
-      
+
       //get the chain and run it all the way
       MersenneTwister rng = new MersenneTwister(seed);
       Mcmc chain = getChain(iChain, nDim, chainLength, rng);
       chain.setNThin(nThin);
       chain.run();
-      
+
       if (chain.chainArray.numRows() != chainLength) {
         isArrayHeight = false;
       }
@@ -561,7 +561,7 @@ public class Test {
       printWriter.println("pass nSample test = "+isNSample);
     }
   }
-  
+
   /**FUNCTION: TEST ADAPTIVE
    * Tests for AdaptiveRwmh and MixtureAdaptiveRwmh
    * Tests if the chain only adapts after nStepTillAdaptive steps
@@ -573,39 +573,39 @@ public class Test {
    * @param name Name of the test
    */
   static void testAdaptive(int nDim, int chainLength, int seed, String name) {
-    
+
     //print test name
     printWriter.println("==========");
     printWriter.println(name);
-    
+
     //for the rwmh family of mcmc
     for (int iChain=1; iChain<=2; iChain++) {
-      
+
       //boolean for the tests
       boolean isUseInitialProposal = true; //if the initial proposal is used in non-adaptive stage
       //if uses proposal which is different from the intial in adaptive stage
       boolean isAdapting = false;
       //if uses the initial proposal in the adaptive stage
       boolean isSaftey = false;
-      
+
       //instantiate the chain
       MersenneTwister rng = new MersenneTwister(seed);
       AdaptiveRwmh chain = (AdaptiveRwmh) getChain(iChain, nDim, chainLength, rng);
       //copy the proposal covariance
       SimpleMatrix proposalCovarianceChol = new SimpleMatrix(chain.proposalCovarianceChol);
-      
+
       //instantiate column vector for the current value of the chain
       SimpleMatrix x = chain.chainArray.extractVector(true, 0);
       CommonOps_DDRM.transpose(x.getDDRM());
-      
+
       //run the chain for nStep
       for (int i=0; i<(chainLength-1); i++) {
-        
+
         //do mcmc step
         chain.step(x);
         //save x to the chain array
         chain.setCurrentStep(x);
-        
+
         //test in the non-adaptive stage, the chain uses the initial proposal
         if (i < chain.nStepTillAdaptive) {
           if(!proposalCovarianceChol.isIdentical(chain.proposalCovarianceChol, 0.0)) {
@@ -632,8 +632,8 @@ public class Test {
       }
     }
   }
-  
-  
+
+
   /**FUNCTION: TEST HMC
    * Test if the method getHamiltonian doesn't change the parameters
    * Test if the positionStep and momentumStep methods change the correct parameters
@@ -643,14 +643,14 @@ public class Test {
    * @param name Name of the test
    */
   static void testHmc(int nDim, int seed, String name) {
-    
+
     //print name of the test
     printWriter.println("==========");
     printWriter.println(name);
-    
+
     //for each mcmc class
     for (int iMcmc=3; iMcmc<6; iMcmc++) {
-      
+
       //booleans for the tests
       //test if the hamiltonian change the parameters
       boolean isHamiltonianModifyParameterTest = true;
@@ -658,19 +658,19 @@ public class Test {
       boolean isMomentumStepModifyTest = true;
       //test if the position step modify the parameters correctly
       boolean isPositionStepModifyTest = true;
-      
+
       //random number generator and chain
       MersenneTwister rng = new MersenneTwister(seed);
       HamiltonianMonteCarlo chain = (HamiltonianMonteCarlo) getChain(iMcmc, nDim, 100, rng);
-      
+
       //instantiate column vector for the current value of the chain
       SimpleMatrix x = chain.chainArray.extractVector(true, 0);
       CommonOps_DDRM.transpose(x.getDDRM());
-      
+
       //instantiate random position and random momentum
       SimpleMatrix position = getRandomVector(nDim, rng);
       SimpleMatrix momentum = chain.getMomentum();
-      
+
       //copy position and momentum, this is then compared after calling getHamiltonian
       SimpleMatrix positionCopy = new SimpleMatrix(position);
       SimpleMatrix momentumCopy = new SimpleMatrix(momentum);
@@ -679,7 +679,7 @@ public class Test {
       if ( (!position.isIdentical(positionCopy, 0)) || (!momentum.isIdentical(momentumCopy, 0))) {
         isHamiltonianModifyParameterTest = false;
       }
-      
+
       //copy the position and momentum vectors
       //test if the momentumStep modify the momentum vector only
       positionCopy = new SimpleMatrix(position);
@@ -691,7 +691,7 @@ public class Test {
       if ( momentum.isIdentical(momentumCopy, 0) ) {
         isMomentumStepModifyTest = false;
       }
-      
+
       //copy the position and momentum vectors
       //test if the positionStep modify the position vector only
       positionCopy = new SimpleMatrix(position);
@@ -703,7 +703,7 @@ public class Test {
       if ( !momentum.isIdentical(momentumCopy, 0) ) {
         isPositionStepModifyTest = false;
       }
-      
+
       //make two copies of the momentum vector
       //one copy takes a full step
       //the other copy take 2 half steps
@@ -714,7 +714,7 @@ public class Test {
       chain.momentumStep(position, momentumHalfSteps, true);
       chain.momentumStep(position, momentumFullStep, false);
       double squaredError = momentumFullStep.minus(momentumHalfSteps).elementPower(2).elementSum();
-      
+
       //print results of the test
       printWriter.println(chain.getClass().getName());
       printWriter.println("pass hamiltonian modification test = "+isHamiltonianModifyParameterTest);
@@ -724,7 +724,7 @@ public class Test {
           +squaredError);
     }
   }
-  
+
   /**FUNCTION: TEST TREE
    * Test if the parameters of constructing new trees are left unmodified
    * Test if the height of tree instantiated from a seed, growing and building is correct
@@ -736,35 +736,35 @@ public class Test {
    * @param name
    */
   static void testTree(int nDim, int nGrow, int seed, String name) {
-    
+
     //print name of the test
     printWriter.println("==========");
     printWriter.println(name);
-    
+
     //for each mcmc class
     for (int iMcmc=4; iMcmc<6; iMcmc++) {
-      
+
       boolean isHeightZero = true;
       boolean isHeightCorrectFromSeed = true;
       boolean isSubTreeHeightTest= true;
       boolean isModifyFromSeedTest = true;
       boolean isGrowBackTest = true;
       boolean isGrowForwardTest = true;
-      
+
       //random number generator and chain
       MersenneTwister rng = new MersenneTwister(seed);
       NoUTurnSampler chain = (NoUTurnSampler) getChain(iMcmc, nDim, 100, rng);
-      
+
       //instantiate random position and random momentum
       SimpleMatrix position = getRandomVector(nDim, rng);
       SimpleMatrix momentum = chain.getMomentum();
       chain.sampleSliceVariable(chain.getHamiltonian(position, momentum));
-      
+
       //make a copy of the position and momentum before planting and growing the tree
       SimpleMatrix positionCopy = new SimpleMatrix(position);
       SimpleMatrix momentumCopy = new SimpleMatrix(momentum);
-      
-      
+
+
       //instantiate a tree of height 0, check the height
       Tree baseTree = chain.newTree(position, momentum);
       if (baseTree.height != 0) {
@@ -772,10 +772,10 @@ public class Test {
       }
       //count the number of times the grow() method has been called
       int growCounter = 0;
-      
+
       //for nGrow times
       for (int iStep=0; iStep<nGrow; iStep++) {
-        
+
         //if no u turn has been made
         if (baseTree.hasNoUTurn) {
           //grow the tree
@@ -783,7 +783,7 @@ public class Test {
           baseTree.grow(direction);
           baseTree.bloom();
           growCounter++;
-          
+
           //if going forward in time, check the backward position vectors are the same
           if (direction) {
             if (!baseTree.subTree.positionBackward.isIdentical(baseTree.positionBackward, 0)) {
@@ -797,7 +797,7 @@ public class Test {
           }
         }
       }
-      
+
       //check if the tree height corresponds to the number of times grow() was called
       if (baseTree.height != growCounter) {
         isHeightCorrectFromSeed = false;
@@ -810,21 +810,21 @@ public class Test {
       if ( (!position.isIdentical(positionCopy, 0)) || (!momentum.isIdentical(momentumCopy, 0)) ) {
         isModifyFromSeedTest = false;
       }
-      
+
       //tests for calling the constructor for instantiating a tree of a given height
       boolean isModifyFromConstructorTest = true;
       boolean isHeightCorrectFromConstructor = true;
       //make a copy of the position and momentum
       positionCopy = new SimpleMatrix(position);
       momentumCopy = new SimpleMatrix(momentum);
-      
+
       //instantiate a tree of nGrow height
       NoUTurnSampler.Tree tree = chain.newTree(position, momentum, rng.nextBoolean(), nGrow);
       //check if the parameters are left unmodified
       if ( (!position.isIdentical(positionCopy, 0)) || (!momentum.isIdentical(momentumCopy, 0)) ) {
         isModifyFromConstructorTest = false;
       }
-      
+
       //if the tree has no u turn, check if the height corresponds to nGrow
       if (tree.hasNoUTurn) {
         if (tree.height != nGrow) {
@@ -836,7 +836,7 @@ public class Test {
           isHeightCorrectFromConstructor = false;
         }
       }
-      
+
       //print results of the test
       printWriter.println(chain.getClass().getName());
       printWriter.println("pass tree height zero test = "+isHeightZero);
@@ -850,5 +850,5 @@ public class Test {
           +isHeightCorrectFromConstructor);
     }
   }
-  
+
 }

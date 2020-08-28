@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ import org.ejml.simple.SimpleMatrix;
  *   -Afterwards the proposal covariance is then a scale of the chain sample covariance
  */
 public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
-  
+
   protected SimpleMatrix safteyProposalCovarianceChol; //proposal covariance of the saftey step
   protected double probabilitySafety = 0.05; //probability of using the step
-  
+
   /**CONSTRUCTOR
    * Adaptives the proposal covariance using a mixture of homogeneous rwmh and scaled chain
    * covariance optimal for normal target
@@ -46,7 +46,7 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
     super(target, chainLength, proposalCovariance, rng);
     this.safteyProposalCovarianceChol = new SimpleMatrix(this.proposalCovarianceChol);
   }
-  
+
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
    * Does a shallow copy of the provided chain and extending the member variable chainArray
@@ -60,7 +60,7 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
     this.probabilitySafety = chain.probabilitySafety;
     this.safteyProposalCovarianceChol = chain.safteyProposalCovarianceChol;
   }
-  
+
   /**OVERRIDE: ADAPTIVE STEP
    * Do a Metropolis-Hastings step but with adaptive proposal covariance
    * this.probabilitySaftey chance the proposal covarinace is safteyProposalCovarianceChol
@@ -69,7 +69,7 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
    */
   @Override
   public void adaptiveStep(SimpleMatrix currentStep) {
-    
+
     //get the chain covariance and scale it so that it is optimial for targetting Normal
     SimpleMatrix newProposalCovarianceChol;
     newProposalCovarianceChol = new SimpleMatrix(this.chainCovariance);
@@ -80,7 +80,7 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
     if (newProposalCovarianceChol == null) {
       newProposalCovarianceChol = this.safteyProposalCovarianceChol;
     }
-    
+
     //with this.probabilitySaftey chance, use the saftey proposal covariance
     //else use the new proposal
     boolean isSaftey = this.rng.nextDouble()< this.probabilitySafety;
@@ -97,7 +97,7 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
       this.proposalCovarianceChol = newProposalCovarianceChol;
     }
   }
-  
+
   /**METHOD: SET PROBABILITY SAFTEY
    * Set the probability that the proposal covariance is the safety proposal
    * @param probabilitySafety probability that the proposal covariance is the safety proposal
@@ -105,5 +105,5 @@ public class MixtureAdaptiveRwmh extends AdaptiveRwmh{
   public void setProbabilitySaftey(double probabilitySafety) {
     this.probabilitySafety = probabilitySafety;
   }
-  
+
 }

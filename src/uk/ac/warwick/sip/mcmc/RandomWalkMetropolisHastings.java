@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import org.ejml.simple.SimpleMatrix;
  * member variable proposalCovarianceChol
  */
 public class RandomWalkMetropolisHastings extends Mcmc{
-  
+
   //proposal covariance decomposed using cholesky
   protected SimpleMatrix proposalCovarianceChol;
-  
+
   /**CONSTRUCTOR
    * Metropolis Hastings algorithm which targets a provided distribution using Gaussian random walk
    * @param target Object which has a method to call the pdf
@@ -44,7 +44,7 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     super(target, chainLength, rng);
     this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
   }
-  
+
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
    * Does a shallow copy of the provided chain and extending the member variable chainArray
@@ -57,7 +57,7 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     //shallow copy the proposalCovarianceChol
     this.proposalCovarianceChol = chain.proposalCovarianceChol;
   }
-  
+
   /**IMPLEMENTED: STEP
    * This chains takes a Metropolis-Hastings step and updates it member variables
    * @param currentStep Column vector of the current step of the MCMC, to be modified
@@ -67,7 +67,7 @@ public class RandomWalkMetropolisHastings extends Mcmc{
     this.metropolisHastingsStep(currentPosition);
     this.updateStatistics(currentPosition);
   }
-  
+
   /**METHOD: METROPOLIS HASTINGS STEP
    * Does a Metropolis-Hastings step given a proposal covariance defined in proposalCovarianceChol
    * It does not increment nStep when this method is called
@@ -75,23 +75,23 @@ public class RandomWalkMetropolisHastings extends Mcmc{
    * @param x current position of the chain, to be modified
    */
   protected void metropolisHastingsStep(SimpleMatrix x){
-    
+
     //instantiate vector of N(0,1) using rng
     SimpleMatrix z = new SimpleMatrix(this.getNDim(), 1);
     for (int i=0; i<this.getNDim(); i++) {
       z.set(i, this.rng.nextGaussian());
     }
-    
+
     //transform z using proposalCovarianceChol and x, assign it to y, y is a proposal
     SimpleMatrix y = this.proposalCovarianceChol.mult(z);
     CommonOps_DDRM.addEquals(y.getDDRM(), x.getDDRM());
-    
+
     //declare variable for the acceptance probability, work it out using the ratio of target pdf
     //if it larger than one, then an acceptance step will always be taken
     double acceptProb = (this.target.getPdf(y)) / (this.target.getPdf(x));
     this.acceptStep(acceptProb, x, y); //x can be modified here
   }
-  
+
   /**METHOD: SET PROPOSAL COVARIANCE
    * Set the proposal covariance
    * @param proposalCovariance proposal covariance use in homogeneous steps
@@ -99,5 +99,5 @@ public class RandomWalkMetropolisHastings extends Mcmc{
   public void setProposalCovariance(SimpleMatrix proposalCovariance) {
     this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
   }
-  
+
 }

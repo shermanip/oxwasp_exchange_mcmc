@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.ejml.simple.SimpleMatrix;
  *  Journal of Machine Learning Research, 15(1), pp.1593-1623
  */
 public class DualAveragingNuts extends NoUTurnSampler {
-  
+
   protected double targetAcceptProb = 0.65; // \delta in the reference
   protected int nAdaptive; // M_adapt in the reference
   protected boolean isAdaptive = true;// boolean, true to do adaptive step
@@ -40,7 +40,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
   protected double timeBias = 10.0; // t_0 in the reference
   protected double decayParameter = 0.75; // \kappa in the reference
   protected double currentHamiltonian; //the hamiltonian of the position-momentum pair currently
-  
+
   /**CONSTRUCTOR
    * An adaptive HMC which adapts the number of leap frog steps so that no u turns are made
    * It also adapts the size of the leap frog steps, requires the number of adaptive step
@@ -62,7 +62,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
     this.logSizeLeapFrog = Math.log(this.sizeLeapFrog);
     this.shrinkCentre = Math.log(10.0) + this.logSizeLeapFrog;
   }
-  
+
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
    * Does a shallow copy of the provided chain and extending the member variable chainArray
@@ -85,7 +85,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
     this.decayParameter = chain.decayParameter;
     this.currentHamiltonian = chain.currentHamiltonian;
   }
-  
+
   /**OVERRIDE: SET INITIAL VALUE
    * Set the initial value of the chain, then set the initial sizeLeapFrog
    * @param initialValue double [] containing the values of the initial position
@@ -95,7 +95,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
     super.setInitialValue(initialValue);
     this.setInitialStepSize();
   }
-  
+
   /**METHOD: SET INITIAL STEP SIZE
    * Called FindReasonableEpsilon in the reference
    * Set the member variable this.sizeLeapFrog during construction
@@ -109,24 +109,24 @@ public class DualAveragingNuts extends NoUTurnSampler {
     double canonicalCurrent;
     double canonicalProposal;
     double a = 0.0;
-    
+
     //keep halving or doubling sizeLeapFrog till Langevin proposal crosses 0.5
     do {
       //half or double sizeLeapFrog
       this.sizeLeapFrog *= Math.pow(2, a);
-      
+
       //get the position-momentum pair and take a leap frog step
       SimpleMatrix positionProposal = new SimpleMatrix(position);
       SimpleMatrix momentumProposal = new SimpleMatrix(momentum);
       this.leapFrog(positionProposal, momentumProposal);
-      
+
       //get the canonical distributions given the hamiltonians
       canonicalCurrent = Math.exp(-this.getHamiltonian(position, momentum));
       canonicalProposal = Math.exp(-this.getHamiltonian(positionProposal
           ,momentumProposal));
       //get acceptance probability
       acceptProb = canonicalProposal/canonicalCurrent;
-      
+
       //if a hasn't been set it, set it here
       if (a == 0.0) {
         if (acceptProb > 0.5) {
@@ -137,9 +137,9 @@ public class DualAveragingNuts extends NoUTurnSampler {
       }
       //while till Langevin proposal crosses 0.5
     } while (Math.pow(acceptProb, a) > Math.pow(2, -a));
-    
+
   }
-  
+
   /**OVERRIDE: SAMPLE SLICE VARIABLE
    * Set the member variable sliceVariable given the current hamiltonian
    * Also sets the member variable currentHamiltonian
@@ -152,7 +152,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
     //save the current hamiltonian
     this.currentHamiltonian = hamiltonian;
   }
-  
+
   /**OVERRIDE: ADAPTIVE STEP
    * This method is called at every MCMC step
    * Calls the method adaptiveStep(Tree tree) which is implemented in this class
@@ -165,7 +165,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
     Tree tree = (Tree) superTree;
     this.adaptiveStep(tree);
   }
-  
+
   /**METHOD: ADAPTIVE STEP
    * This method is called at every MCMC step
    * In a step of HMC, which consist of multiple leap frog steps, update the member variables
@@ -183,20 +183,20 @@ public class DualAveragingNuts extends NoUTurnSampler {
         double nStepBiasInverse = 1/((double)this.nStep + this.timeBias);
         double decay = Math.pow((double)this.nStep,-this.decayParameter);
         double currentPropAccept = subTree.sumProbAccept/((double)subTree.nAcceptReject);
-        
+
         //update the objective
         this.objective *= 1 - nStepBiasInverse;
         this.objective += nStepBiasInverse * ( this.targetAcceptProb - currentPropAccept);
-        
+
         //adjust logSizeLeapFrog and sizeLeapFrog
         this.logSizeLeapFrog = this.shrinkCentre
             - Math.sqrt((double)this.nStep)*this.objective/this.shrinkage;
         this.sizeLeapFrog = Math.exp(this.logSizeLeapFrog);
-        
+
         //take a weighted average of logSizeLeapFrog and logDualAveSizeLeapFrog
         this.logDualAveSizeLeapFrog *= (1.0 - decay);
         this.logDualAveSizeLeapFrog += decay * this.logSizeLeapFrog;
-        
+
         //for the end of the adaptive stage, set the final value for sizeLeapFrog
       } else {
         this.sizeLeapFrog = Math.exp(this.logDualAveSizeLeapFrog);
@@ -204,7 +204,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
       }
     }
   }
-  
+
   /**OVERRIDE: NEW TREE
    * See constructor in subclass Tree
    * This is overridden so that this method returns DualAveragingNuts.Tree rather than
@@ -214,7 +214,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
   protected Tree newTree (SimpleMatrix position, SimpleMatrix momentum) {
     return this.new Tree(position, momentum);
   }
-  
+
   /**OVERRIDE: NEW TREE
    * See constructor in subclass Tree
    * This is overridden so that this method returns DualAveragingNuts.Tree rather than
@@ -225,14 +225,14 @@ public class DualAveragingNuts extends NoUTurnSampler {
       boolean isNegative, int treeHeight) {
     return this.new Tree(position, momentum, isNegative, treeHeight);
   }
-  
+
   /**INNER CLASS: TREE
    * See superclass NoUTurnSampler.Tree
    * Extended for the dual averaging algorithm
    * Sum the Metropolis-Hastings acceptance rate at every node
    */
   protected class Tree extends NoUTurnSampler.Tree {
-    
+
     //temporary variable, resulting subTree after calling the method grow()
     //hides the superclass version
     protected Tree subTree;
@@ -240,22 +240,22 @@ public class DualAveragingNuts extends NoUTurnSampler {
     protected double sumProbAccept;
     //number terms in sumProbAccept
     protected double nAcceptReject;
-    
+
     /**CONSTRUCTOR
      * See superclass NoUTurnSampler.Tree
      * Instantiate a tree of height 0, no leap frog step taken and grows from the given
-     * position and momentum pair 
+     * position and momentum pair
      * @param position Column vector, position vector to grow from
      * @param momentum Column vector, momentum vector to grow from
      */
     public Tree(SimpleMatrix position, SimpleMatrix momentum) {
       super(position, momentum);
     }
-    
+
     /**CONSTRUCTOR
      * See superclass NoUTurnSampler.Tree
      * Instantiate a tree of height treeHeight, each node correspond to a leap frog step
-     * The tree grows from the given position and momentum pair 
+     * The tree grows from the given position and momentum pair
      * Note: treeHeight = 0 will instantiate a tree of height 0 and a leap frog step is taken
      * from the given position-momentum pair
      * @param position Column vector, position vector to grow from
@@ -267,7 +267,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
         boolean isNegative, int treeHeight) {
       super(position, momentum, isNegative, treeHeight);
     }
-    
+
     /**OVERRIDE: SET USING HAMILTONIAN
      * See superclass NoUTurnSampler.Tree
      * Set the member variables this.sumPropAccept and nAcceptReject in the base case
@@ -289,7 +289,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
       //when using the method buildTree
       this.nAcceptReject = 1;
     }
-    
+
     /**OVERRIDE: GROW
      * Calls the superclass method grow as usual but cast the hidden superclass
      * member variable super.subTree to a DualAveragingNuts.Tree reference
@@ -304,7 +304,7 @@ public class DualAveragingNuts extends NoUTurnSampler {
       //save the casted reference to the member variable this.subTree
       this.subTree = (Tree) super.subTree;
     }
-    
+
     /**OVERRIDE: BLOOM
      * See superclass NoUTurnSampler.Tree
      * To be called after calling the method grow()

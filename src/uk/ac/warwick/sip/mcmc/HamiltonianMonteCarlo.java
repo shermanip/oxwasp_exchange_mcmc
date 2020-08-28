@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.ejml.simple.SimpleMatrix;
  * The resulting position of the particle is accept/rejected using the cannonical distribution
  */
 public class HamiltonianMonteCarlo extends Mcmc {
-  
+
   //cholesky decomposition of the mass matrix
   protected SimpleMatrix massChol;
   //inverse of the mass matrix
@@ -38,11 +38,11 @@ public class HamiltonianMonteCarlo extends Mcmc {
   protected double sizeLeapFrog;
   //number of leap frog step for each mcmc step
   protected int nLeapFrog;
-  
+
   //array of vectors containing position vector of each leapfrog step
   protected SimpleMatrix [] leapFrogPositions;
   static public final int MAX_N_LEAP_FROG = 100; //maximum number of leap frog steps
-  
+
   /**CONSTRUCTOR
    * Sampler which uses Hamiltonian dynamics
    * @param target Object which has a method to call the pdf
@@ -66,12 +66,12 @@ public class HamiltonianMonteCarlo extends Mcmc {
     TriangularSolver_DDRM.invertLower(massCholInverse.getDDRM().getData(), this.getNDim());
     this.massInverse = new SimpleMatrix(this.getNDim(), this.getNDim());
     CommonOps_DDRM.multInner(massCholInverse.getDDRM(), massInverse.getDDRM());
-    
+
     //fill leapFrogPositions with null
     this.leapFrogPositions = new SimpleMatrix [MAX_N_LEAP_FROG];
     this.isAccepted = false;
   }
-  
+
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
    * Does a shallow copy of the provided chain and extending the member variable chainArray
@@ -84,10 +84,10 @@ public class HamiltonianMonteCarlo extends Mcmc {
     super(chain, nMoreSteps);
     this.massChol = chain.massChol;
     this.massInverse = chain.massInverse;
-    this.sizeLeapFrog = chain.sizeLeapFrog; 
+    this.sizeLeapFrog = chain.sizeLeapFrog;
     this.nLeapFrog = chain.nLeapFrog;
   }
-  
+
   /**OVERRIDE: STEP
    * Does a HMC step. The position vector is the current position of the chain.
    * Momentum is generated randomly using Gaussian.
@@ -100,26 +100,26 @@ public class HamiltonianMonteCarlo extends Mcmc {
   public void step(SimpleMatrix position) {
     //get the position vector from the chain array, and random momentum
     SimpleMatrix momentum = this.getMomentum();
-    
+
     //instantiate SimpleMatrices for the proposal variables
     SimpleMatrix positionProposal = new SimpleMatrix(position);
     SimpleMatrix momentumProposal = new SimpleMatrix(momentum);
-    
+
     //do the leap frog step
     this.leapFrog(positionProposal, momentumProposal);
-    
+
     //get the canonical distributions given the hamiltonians
     double canonicalCurrent = Math.exp(-this.getHamiltonian(position, momentum));
     double canonicalProposal = Math.exp(-this.getHamiltonian(positionProposal, momentumProposal));
-    
+
     //do acceptance step
     double acceptProb = canonicalProposal/canonicalCurrent;
     this.acceptStep(acceptProb, position, positionProposal);
-    
+
     //update the statistics of itself
     this.updateStatistics(position);
   }
-  
+
   /**METHOD: GET MOMENTUM
    * generate a random momentum vector
    * it is generated using Normal with mass covariance
@@ -136,7 +136,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     momentum = this.massChol.mult(momentum);
     return momentum;
   }
-  
+
   /**METHOD: LEAP FROG
    * Solves the Hamiltonian equations using this.nLeapFrog steps
    * The leap frog steps consist of consecutive half momentum update, position update, then
@@ -160,7 +160,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     //save the leap frog position
     this.addToLeapFrogArray(this.nLeapFrog-1, new SimpleMatrix(positionProposal));
   }
-  
+
   /**METHOD: ADD TO LEAP FROG ARRAY
    * Add a leap frog step to the array leapFrogPositions
    * @param index Pointer to position in leapFrogPositions array
@@ -169,7 +169,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
   protected void addToLeapFrogArray(int index, SimpleMatrix position) {
     this.leapFrogPositions[index] = new SimpleMatrix(position);
   }
-  
+
   /**METHOD: MOMENTUM STEP
    * Used for the leap frog step
    * Updates and MODIFIES the momentum proposal obeying Hamiltonian dynamics
@@ -187,7 +187,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     }
     CommonOps_DDRM.subtractEquals(momentumProposal.getDDRM(), momentumChange.getDDRM());
   }
-  
+
   /**METHOD: POSITION STEP
    * Used for the leap frog step
    * Updates and MODIFIES the position proposal obeying Hamiltonian dynamics
@@ -199,7 +199,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     CommonOps_DDRM.scale(this.sizeLeapFrog, positionChange.getDDRM());
     CommonOps_DDRM.addEquals(positionProposal.getDDRM(), positionChange.getDDRM());
   }
-  
+
   /**METHOD: GET HAMILTONIAN
    * Returns the Hamiltonian (or energy of the system) given the position and momentum
    * of the particle
@@ -216,7 +216,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
     //add all of the energies
     return kineticEnergy + potentialEnergy;
   }
-  
+
   /**METHOD: GET LEAP FROG POSITIONS
    * Return the vector of a leap frog step of the last HMC step
    * @param index which leap frog step to be requested
@@ -230,7 +230,7 @@ public class HamiltonianMonteCarlo extends Mcmc {
       return leapFrogPosition.getDDRM().getData();
     }
   }
-  
+
   /**METHOD: CHANGE NUMBER OF LEAP FROG STEPS
    * Change the number of leap frog steps to do
    * @param nLeapFrog Number of leap frog steps to do in a HMC step
@@ -241,5 +241,5 @@ public class HamiltonianMonteCarlo extends Mcmc {
       this.nLeapFrog = nLeapFrog;
     }
   }
-  
+
 }

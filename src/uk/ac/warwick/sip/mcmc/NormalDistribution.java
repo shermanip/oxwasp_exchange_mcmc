@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ import org.ejml.simple.SimpleMatrix;
  *
  */
 public class NormalDistribution extends TargetDistribution{
-  
+
   //mean vector of the normal distribution
   protected SimpleMatrix mean;
   //cholesky decomposition of the covariance matrix as a lower triangle matrix
   protected SimpleMatrix covarianceChol;
-  
+
   /**CONSTRUCTOR
    * Stores the covariance of the Normal random variable with mean 0
    * Returns the pdf when method getPdf is called
@@ -44,7 +44,7 @@ public class NormalDistribution extends TargetDistribution{
   public NormalDistribution(int nDim, SimpleMatrix covariance){
     this(nDim, new SimpleMatrix(nDim, 1), covariance);
   }
-  
+
   /**CONSTRUCTOR
    * Stores the covariance of the Normal random variable with supplied mean
    * Returns the pdf when method getPdf is called
@@ -58,7 +58,7 @@ public class NormalDistribution extends TargetDistribution{
     this.mean = mean;
     this.covarianceChol = Global.cholesky(covariance);
   }
-  
+
   /**IMPLEMENT: GET PDF
    * Evaluate the probability density function at x
    * The pdf needs not to be normalised, ie integrate to 1
@@ -70,7 +70,7 @@ public class NormalDistribution extends TargetDistribution{
   public double getPdf(SimpleMatrix x) {
     return Math.exp(-this.getPotential(x));
   }
-  
+
   /**IMPLEMENT: GET POTENTIAL
    * Evaluate the -ln pdf + some constant
    * The constant comes from the face the pdf is evaluated up to a constant
@@ -82,7 +82,7 @@ public class NormalDistribution extends TargetDistribution{
     SimpleMatrix z = this.covarianceChol.solve(x.minus(this.mean));
     return 0.5 * z.dot(z);
   }
-  
+
   /**METHOD: GET D POTENTIAL
    * Evaluate the differential of -ln pdf
    * @param x Where to evaluate the potential gradient
@@ -98,7 +98,7 @@ public class NormalDistribution extends TargetDistribution{
     SimpleMatrix covariance = new SimpleMatrix(this.nDim, this.nDim);
     CommonOps_DDRM.multInner(covarianceCholInverse.getDDRM(), covariance.getDDRM());
     return covariance.mult(x.minus(this.mean));
-    
+
   }
-  
+
 }

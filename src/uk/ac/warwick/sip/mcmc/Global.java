@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.ejml.simple.SimpleMatrix;
  * Prints efficiency, log precision, mean and error
  */
 public class Global {
-  
+
   public static void main(String[] args) {
     int nDim = 16;
     int chainLength = 100000;
@@ -41,7 +41,7 @@ public class Global {
     massMatrix = massMatrix.scale(1.0);
     double sizeLeapFrog = 0.5;
     TargetDistribution target = new NormalDistribution(nDim, targetCovariance);
-    
+
     //for rubin-gelman, need to run additional chains
     int nChain = 5;
     //declare array of chains
@@ -80,7 +80,7 @@ public class Global {
       tracePlot.show();
       tracePlot.exec();
     }
-    
+
     //get the gelman rubin statistic
     //plot 2,3,...,nBurnInMax vs F
     int nBurnInMax = 2000;
@@ -96,7 +96,7 @@ public class Global {
     fPlot.ylabel("F statistic");
     fPlot.show();
     fPlot.exec();
-    
+
     //plot acceptance rate
     JyPlot acceptancePlot = new JyPlot();
     acceptancePlot.figure();
@@ -105,8 +105,8 @@ public class Global {
     acceptancePlot.ylabel("acceptance rate");
     acceptancePlot.show();
     acceptancePlot.exec();
-    
-    
+
+
     //plot autocorrelation
     int nLag = 100;
     double [] lag = new double[nLag];
@@ -122,7 +122,7 @@ public class Global {
     autoCorrelationPlot.ylabel("autocorrelation");
     autoCorrelationPlot.show();
     autoCorrelationPlot.exec();
-    
+
     //plot autocorrelation of the batch
     nLag = 10;
     lag = new double[nLag];
@@ -138,7 +138,7 @@ public class Global {
     batchAcfPlot.ylabel("autocorrelation");
     batchAcfPlot.show();
     batchAcfPlot.exec();
-    
+
     //print the efficiency for all chains
     for (int i=0; i<nChain; i++) {
       System.out.println("===Chain "+i+" ===");
@@ -154,11 +154,11 @@ public class Global {
       SimpleMatrix posteriorCovariance = new SimpleMatrix(mcmcArray[i].getNDim(),
           mcmcArray[i].getNDim(), true, mcmcArray[i].getPosteriorCovariance());
       System.out.println("error = "+Math.sqrt(posteriorCovariance.get(0, 0)));
-      
+
     }
   }
-  
-  
+
+
   /**FUNCTION: CHOLESKY DECOMPOSITION
    * @param x Symmetric matrix to decompose
    * @return cholesky decomposition if possible, other null
@@ -174,8 +174,8 @@ public class Global {
     }
     return SimpleMatrix.wrap(chol.getT(null));
   }
-  
-  
+
+
   /**FUNCTION: GET RANDOM COVARIANCE
    * Generates a random covariance using ZZ' where Z is a dxd matrix of random standard Gaussian
    * @param nDim Number of dimensions
@@ -189,5 +189,5 @@ public class Global {
     }
     return covariance.mult(covariance.transpose());
   }
-  
+
 }

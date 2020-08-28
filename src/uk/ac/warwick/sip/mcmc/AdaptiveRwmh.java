@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@ import org.ejml.simple.SimpleMatrix;
  *   -Afterwards the proposal covariance is then a scale of the chain sample covariance
  */
 public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
-  
+
   protected int nStepTillAdaptive; //number of regular MH steps till use adaptive method
   //small constant to be added to the diagional of the proposal covairnace in adaptive steps
   private double e;
   protected boolean isAdaptive = true; //user selected, if the chain is adaptive or not
-  
+
   /**CONSTRUCTOR
    * Does random walk Metropolis Hastings with adaptive proposal covariance
    * @param target See superclass RandomWalkMetropolisHastings
@@ -48,7 +48,7 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     this.nStepTillAdaptive = 2*this.getNDim()-1; //default value
     this.e = 1E-10; //default value
   }
-  
+
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
    * Does a shallow copy of the provided chain and extending the member variable chainArray
@@ -62,7 +62,7 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     this.nStepTillAdaptive = chain.nStepTillAdaptive;
     this.e = chain.e;
   }
-  
+
   /**METHOD: SET IS ADAPTIVE
    * Set if the chain is adaptive or not
    * @param isAdaptive
@@ -70,7 +70,7 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
   public void setIsAdaptive(boolean isAdaptive) {
     this.isAdaptive = isAdaptive;
   }
-  
+
   /**OVERRIDE: STEP
    * Do a Metropolis-Hastings step, the chain is homogeneous for nStepTillAdaptive steps
    * Afterwards the proposal covariance will change, the step will be taken using
@@ -91,7 +91,7 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     }
     this.updateStatistics(currentPosition);
   }
-  
+
   /**METHOD: ADAPTIVE STEP
    * Do a Metropolis-Hastings step, proposal covariance will change according to the chain sample
    * covariance with a small element added to the diagonal
@@ -109,7 +109,7 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
     this.proposalCovarianceChol = Global.cholesky(proposalCovariance);
     this.metropolisHastingsStep(currentPosition);
   }
-  
+
   /**METHOD: SET DIAG
    * Set the small element to be added to the adaptive proposal covariance
    * @param e
@@ -117,5 +117,5 @@ public class AdaptiveRwmh extends RandomWalkMetropolisHastings{
   public void setDiag(double e) {
     this.e = e;
   }
-  
+
 }

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 Sherman Ip
+ *    Copyright 2018-2020 Sherman Lo
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -29,17 +29,17 @@ import org.ejml.simple.SimpleMatrix;
  *  Journal of Machine Learning Research, 15(1), pp.1593-1623
  */
 public class NoUTurnSampler extends HamiltonianMonteCarlo {
-  
+
   //after a leapfrog step, threshold of comparing the hamiltonian with the slice variable
   //used to determine if a u turn has been made
   protected double deltaMax;
   //temporary variable for storing the slice variable
   //a random double times the cannonical distribution
   protected double sliceVariable;
-  
+
   //array of vectors containing position vector of each leapfrog step
   protected ArrayList<SimpleMatrix> leapFrogPositions;
-  
+
   /**CONSTRUCTOR
    * Adaptive HMC which adapts the number of leap frog steps so that no u turns are made
    * @param target Object which has a method to call the pdf
@@ -58,7 +58,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     //delete the superclass version of leapFrogPositions
     super.leapFrogPositions = null;
   }
-  
+
   /**CONSTRUCTOR
    * Constructor for extending the length of the chain and resume running it
    * Does a shallow copy of the provided chain and extending the member variable chainArray
@@ -71,7 +71,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     super(chain, nMoreSteps);
     this.deltaMax = chain.deltaMax;
   }
-  
+
   /**OVERRIDE: ADD TO LEAP FROG ARRAY
    * Do nothing, this it to stop accessing the unused member variable super.leapFrogPositions
    */
@@ -79,7 +79,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
   protected void addToLeapFrogArray(int index, SimpleMatrix position) {
     //do nothing
   }
-  
+
   /**OVERRIDE: STEP
    * Does a step using the No U Turn Sampler
    * The position vector is the current position of the chain.
@@ -89,13 +89,13 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
    */
   @Override
   public void step(SimpleMatrix position) {
-    
+
     //get the position vector from the chain array, and random momentum
     SimpleMatrix momentum = this.getMomentum();
-    
+
     //sample the slice variable
     this.sampleSliceVariable(this.getHamiltonian(position, momentum));
-    
+
     //instantiate a tree with the variables
     //backward position and momentum = position and momentum
     //forward position and momentum = position and momentum
@@ -104,31 +104,31 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     //hasNoUTurn = true (referred to as s in the reference)
     Tree tree = this.newTree(position, momentum);
     tree.nSliceAccept++;
-    
+
     //instantiate array for storing all the leap frog steps and rejected steps
     this.leapFrogPositions = new ArrayList<SimpleMatrix>();
     //Initialise the arraylist
     //afterwards, elements will be appended to this array by the object tree, see the subclass
     this.leapFrogPositions.add(new SimpleMatrix(position));
-    
+
     //declare variable for flagging if an acceptance step has been taken
     this.isAccepted = false;
-    
+
     //while no u turn has been made
     while (tree.hasNoUTurn) {
-      
+
       //sample Uniform({-1,1}), this controls the direction of the tree growth
       boolean isNegative = this.rng.nextBoolean();
-      
+
       //grow the tree in the direction of isNegative
       //either the backward or forward position-momentum pairs are updated
       //the new part of the tree is the subtree and is a member variable
       tree.grow(isNegative);
-      
+
       //the subtree contains a new proposal position
       //the subtree is the same height of the tree before the method grow() has been called
       Tree subTree = tree.subTree;
-      
+
       //if the subtree hasn't made a u turn
       if (subTree.hasNoUTurn) {
         //accept the proposal position with a probability
@@ -139,29 +139,29 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
           this.isAccepted = true;
         }
       }
-      
+
       //adjust member variables of the main tree, this includes tree.hasNoUTurn
       tree.bloom();
-      
+
     }
-    
+
     //if an acceptance step has been taken, increment the number of acceptance steps
     if (this.isAccepted) {
       this.nAccept++;
     }
-    
+
     //copy the proposal position
     position.set(tree.positionProposal);
-    
+
     //update the statistics of itself
     this.updateStatistics(position);
-    
+
     //call the method adaptiveStep, in this class it does nothing
     //subclasses may override adaptiveStep method
     this.adaptiveStep(tree);
-    
+
   }
-  
+
   /**METHOD: SAMPLE SLICE VARIABLE
    * Set the member variable sliceVariable given the current hamiltonian
    * The slice varaible is a random number Uniform(0,Math.exp(-hamiltonian))
@@ -173,7 +173,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
     this.sliceVariable = this.rng.nextDouble();
     this.sliceVariable *= Math.exp(-hamiltonian);
   }
-  
+
   /**METHOD: ADAPTIVE STEP
    * Does nothing, to be overridden if an adaptive step, which depends on the tree,
    * is to be implemented
@@ -181,7 +181,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
   protected void adaptiveStep(Tree tree) {
     //do nothing
   }
-  
+
   /**METHOD: GET LEAP FROG POSITIONS
    * Return an iterator which iterates all the leap frog positions in the latest HMC step
    * @return iterator which iterates all the leap frog positions
@@ -189,14 +189,14 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
   public Iterator<SimpleMatrix> getLeapFrogPositionIterator(){
     return this.leapFrogPositions.iterator();
   }
-  
+
   /**METHOD: NEW TREE
    * See constructor in subclass Tree
    */
   protected Tree newTree (SimpleMatrix position, SimpleMatrix momentum) {
     return this.new Tree(position, momentum);
   }
-  
+
   /**METHOD: NEW TREE
    * See constructor in subclass Tree
    */
@@ -204,57 +204,57 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       boolean isNegative, int treeHeight) {
     return this.new Tree(position, momentum, isNegative, treeHeight);
   }
-  
+
   /**INNER CLASS: TREE
    * Stores the position/momentum backward/forward column vectors
    * Stores the proposed position column vector
    * Stores the number of accepted steps
    * Stores the boolean hasNoUTurn
-   * 
+   *
    * Two constructors are provided
-   * 
+   *
    * Tree(SimpleMatrix position, SimpleMatrix momentum) only stores the variables. A tree of
    * height 0 is instantiated, no leap frog step is taken
-   * 
+   *
    * Tree(SimpleMatrix position, SimpleMatrix momentum, boolean isNegative, int treeHeight)
    * instantiate a tree of height treeHeight. It grows from the given position-momentum pair
    * and each node (or height) correspond to a leap frog step. Setting treeHeight = 0 will
    * instantiate a tree of height 0, a leap frog step is taken from the given
    * position-momentum pair. This is different from the Tree(SimpleMatrix position,
    * SimpleMatrix momentum) constructor.
-   * 
+   *
    * Source code makes use of inner classes, instances are owned by (and can access)
    * the parent NoUTurnSampler object
    */
   protected class Tree {
-    
+
     protected SimpleMatrix positionBackward; //column vector, position backwards in time
     protected SimpleMatrix momentumBackward; //column vector, momentum backwards in time
     protected SimpleMatrix positionForward; //column vector, position forwards in time
     protected SimpleMatrix momentumForward; //column vector, momentum forwards in time
     protected SimpleMatrix positionProposal; //column vector, proposed position
     //number of times slice variable (u) < exp(-H) (n in the reference)
-    protected int nSliceAccept = 0; 
+    protected int nSliceAccept = 0;
     //determines if this sampler has not made a u turn
     protected boolean hasNoUTurn = true;
     //height of the tree
     protected int height = 0;
     //temporary variable, resulting subTree after calling the method grow()
     protected Tree subTree;
-    
+
     /**CONSTRUCTOR
      * Instantiate a tree of height 0, no leap frog step taken and grows from the given
-     * position and momentum pair 
+     * position and momentum pair
      * @param position Column vector, position vector to grow from
      * @param momentum Column vector, momentum vector to grow from
      */
     public Tree(SimpleMatrix position, SimpleMatrix momentum) {
       this.plantSeed(position, momentum);
     }
-    
+
     /**CONSTRUCTOR
      * Instantiate a tree of height treeHeight, each node correspond to a leap frog step
-     * The tree grows from the given position and momentum pair 
+     * The tree grows from the given position and momentum pair
      * Note: treeHeight = 0 will instantiate a tree of height 0 and a leap frog step is taken
      * from the given position-momentum pair
      * @param position Column vector, position vector to grow from
@@ -266,7 +266,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
         boolean isNegative, int treeHeight) {
       this.buildTree(position, momentum, isNegative, treeHeight);
     }
-    
+
     /**METHOD: PLANT SEED
      * Only used by the constructor and the method build tree
      * This assign the member variables given the starting point of the sampler
@@ -280,7 +280,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       this.momentumForward = momentum;
       this.positionProposal = position;
     }
-    
+
     /**METHOD: BUILD TREE
      * See reference (Hoffman 2014), function buildTree()
      * This method is only used by the constructor and itself recursively
@@ -305,19 +305,19 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
           NoUTurnSampler.this.sizeLeapFrog *= -1.0;
         }
         //method leapFrog modifies positionProposal and momentumProposal
-        NoUTurnSampler.this.leapFrog(positionProposal, momentumProposal); 
+        NoUTurnSampler.this.leapFrog(positionProposal, momentumProposal);
         if (isNegative) {
           NoUTurnSampler.this.sizeLeapFrog *= -1.0;
         }
-        
+
         //prepare variables of the new instantiated Tree object
         this.plantSeed(positionProposal, momentumProposal);
-        
+
         //get the hamiltonian to set variables such as nSliceAccept and hasNoUTurn
         double hamiltonian = NoUTurnSampler.this.getHamiltonian(positionProposal,
             momentumProposal);
         this.setUsingHamiltonian(hamiltonian);
-        
+
         //if no u turn has been made and a slice accept has been made
         //save the leap frog position
         if ( (this.nSliceAccept==1) & (this.hasNoUTurn) ) {
@@ -328,24 +328,24 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
             NoUTurnSampler.this.leapFrogPositions.add(positionProposal);
           }
         }
-        
+
       } else { //else this is not a base case
-        
+
         //recursion - implicitly build the left and right subtrees
         //the recursion will keep on stacking until the base case treeHeight = 0
         //then treeHeight will increment for each removal from the stack
         //it should be noted that this.treeHeight is set to 0 in the base case
         //this.treeHeight increments everytime this.grow and this.bloom is called
         this.buildTree(position, momentum, isNegative, treeHeight-1);
-        
+
         //if no u turn has been made
         if (this.hasNoUTurn) {
-          
+
           //grow the tree in the direction of build tree
           //this instantiate a tree, grew from the far backward/forward in time
           //the new instantiate tree is the subtree
           this.grow(isNegative);
-          
+
           //the subtree contains a new proposal
           //accept the new proposal with a probability
           double probAccept = ((double)(this.subTree.nSliceAccept))
@@ -353,15 +353,15 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
           if (NoUTurnSampler.this.rng.nextDouble() < probAccept) {
             this.positionProposal = this.subTree.positionProposal;
           }
-          
+
           //update the member variables of the main tree
           this.bloom();
-          
+
         }
       }
-      
+
     }
-    
+
     /**METHOD: SET USING HAMILTONIAN
      * Given the hamiltonian of the proposal, set the member variables nSliceAccept and
      * hasNoUTurn
@@ -373,14 +373,14 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       if (NoUTurnSampler.this.sliceVariable < Math.exp(-hamiltonian)) {
         this.nSliceAccept++;
       }
-      
+
       //determine if a u turn has been made or not
       if (-hamiltonian <= (Math.log(NoUTurnSampler.this.sliceVariable)
           -NoUTurnSampler.this.deltaMax)) {
         this.hasNoUTurn = false;
       }
     }
-    
+
     /**METHOD: GROW
      * Add the subtree to the tree, given the state of the system
      * This method MODIFIES itself
@@ -414,7 +414,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       //save the sub tree
       this.subTree = subTree;
     }
-    
+
     /**METHOD: BLOOM
      * To be called after calling the method grow()
      * Update the member variables nSliceAccept, hasNoUTurn, height
@@ -424,7 +424,7 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       this.hasNoUTurn = this.subTree.hasNoUTurn && this.checkHasNoUTurn();
       this.height++;
     }
-    
+
     /**METHOD: CHECK HAS NO U TURN
      * Check if a u turn has been made
      * @param tree Uses the variable stored in tree to check for u turns
@@ -434,10 +434,10 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       //declare booleans for no u turn indication using the forward and backward variables
       boolean hasNoBackwardUTurn = false;
       boolean hasNoForwardUTurn = false;
-      
+
       //instantiate a column vector, difference in the position vectors
       SimpleMatrix positionDifference = this.positionForward.minus(this.positionBackward);
-      
+
       //check for u turns using the forward and backward momentum
       if (positionDifference.dot(this.momentumBackward) >= 0) {
         hasNoBackwardUTurn = true;
@@ -445,10 +445,10 @@ public class NoUTurnSampler extends HamiltonianMonteCarlo {
       if (positionDifference.dot(this.momentumForward) >= 0) {
         hasNoForwardUTurn = true;
       }
-      
+
       //return the no u turn boolean
       return hasNoBackwardUTurn & hasNoForwardUTurn;
     }
   }
-  
+
 }
