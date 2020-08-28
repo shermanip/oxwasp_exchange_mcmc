@@ -33,6 +33,28 @@ import org.ejml.simple.SimpleMatrix;
 public class Global {
 
   public static void main(String[] args) {
+
+    if (args.length == 0) {
+      uk.ac.warwick.sip.mcmcprocessing.Menu.main(args);
+    } else {
+      String userArg = args[0];
+      if (userArg.equals("-bm")) {
+        uk.ac.warwick.sip.mcmcprocessing.BrownianMotion.main(args);
+      } else if (userArg.equals("-hmc")) {
+        uk.ac.warwick.sip.mcmcprocessing.HamiltonianMonteCarlo.main(args);
+      } else if (userArg.equals("-nuts")) {
+        uk.ac.warwick.sip.mcmcprocessing.NoUTurnSampler.main(args);
+      } else if (userArg.equals("-rwmh")) {
+        uk.ac.warwick.sip.mcmcprocessing.RandomWalkMetropolisHastings.main(args);
+      } else if (userArg.equals("-example")) {
+        example();
+      } else if (userArg.equals("-test")) {
+        Test.main(args);
+      }
+    }
+  }
+
+  public static void example() {
     int nDim = 16;
     int chainLength = 100000;
     MersenneTwister rng = new MersenneTwister(-280845742);

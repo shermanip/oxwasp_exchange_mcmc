@@ -161,7 +161,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
     }
   }
 
-  public static void main(String[] args) {
+  public static void main() {
     PApplet.main("uk.ac.warwick.sip.mcmcprocessing.HamiltonianMonteCarlo");
   }
 
