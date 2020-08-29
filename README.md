@@ -13,8 +13,8 @@ For dependencies, see the `pom.xml` file or:
 
 ## References
 * Haario, H., Saksman, E., Tamminen, J., et al. (2001). An adaptive Metropolis algorithm. _Bernoulli_, 7(2):223-242.
-* Hastings, W. K. (1970). Mote Carlo Sampling methods using Markov chains and their applications. _Biometrikia_ 57(1):97-109.
-* Hoffman, M. D. and Gelman, A. (2014). The No-U-turn sampler: adaptively setting path lengths in Hamiltonian Mote carlo. _Journal of Machine Learning Research_, 15(1):1593-1623.
+* Hastings, W. K. (1970). Monte Carlo sampling methods using Markov chains and their applications. _Biometrika_ 57(1):97-109.
+* Hoffman, M. D. and Gelman, A. (2014). The No-U-turn sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. _Journal of Machine Learning Research_, 15(1):1593-1623.
 * Metropolis, N., Rosenbluth, A. W., Rosenbluth, M. N., Teller, A. H., and Teller, E. (1953). Equation of state calculations by fast computing machines. _The Journal of Chemical Physics_, 21(6):1087–1092.
 * Neal, R. M. (2011). MCMC using Hamiltonian dynamics. In Brooks, S., Gelman, A., Jones, G., and Meng, X.-L., editors, _Handbook of Markov Chain Monte Carlo_, chapter 5, pages 113–162. CRC press.
 * Roberts, G. O. and Rosenthal, J. S. (2009). Examples of adaptive MCMC. _Journal of Computational and Graphical Statistics_, 18(2):349–367.
