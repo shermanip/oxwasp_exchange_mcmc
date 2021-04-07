@@ -48,6 +48,8 @@ public class Global {
         uk.ac.warwick.sip.mcmcprocessing.NoUTurnSampler.main(args);
       } else if (userArg.equals("-rwmh")) {
         uk.ac.warwick.sip.mcmcprocessing.RandomWalkMetropolisHastings.main(args);
+      } else if (userArg.equals("-slice")) {
+        uk.ac.warwick.sip.mcmcprocessing.EllipticalSlice.main(args);
       } else if (userArg.equals("-example")) {
         example();
       } else if (userArg.equals("-test")) {

@@ -80,9 +80,9 @@ public class NoUTurnSampler extends McmcApplet{
         x1 = x2;
         y1 = y2;
       }
-      //draw in blue the accepted sample
-      this.stroke(0,0,255);
-      this.fill(0,0,255);
+      //draw in green the accepted sample
+      this.stroke(0,255,0);
+      this.fill(0,255,0);
       x2 = (float) chainArray[this.chain.getNStep()*2];
       y2 = (float) chainArray[this.chain.getNStep()*2+1];
       this.ellipse(x2, y2 , CIRCLE_SIZE, CIRCLE_SIZE);

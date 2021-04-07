@@ -50,7 +50,7 @@ public class HamiltonianMonteCarlo extends McmcApplet{
   @Override
   public void setup() {
     super.setup();
-    target = this.getNormalDistribution();
+    this.target = this.getNormalDistribution();
 
     //instantiate slider bar
     this.nLeapFrogSlider = new GSlider(this, 110, 150, 300, 150, 30);

@@ -18,6 +18,7 @@ package uk.ac.warwick.sip.mcmc;
 
 import java.lang.Math;
 
+import org.apache.commons.math3.random.MersenneTwister;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.decomposition.TriangularSolver_DDRM;
 import org.ejml.simple.SimpleMatrix;
@@ -98,7 +99,19 @@ public class NormalDistribution extends TargetDistribution{
     SimpleMatrix covariance = new SimpleMatrix(this.nDim, this.nDim);
     CommonOps_DDRM.multInner(covarianceCholInverse.getDDRM(), covariance.getDDRM());
     return covariance.mult(x.minus(this.mean));
+  }
 
+  /**METHOD: SAMPLE
+   * Sample a Gaussian distribution with a mean and covariance
+   * @return vector, sample from Gaussian distribution
+   */
+  public SimpleMatrix sample(MersenneTwister rng) {
+    double [] xArray = new double[this.nDim];
+    for (int i=0; i<this.nDim; i++){
+      xArray[i] = rng.nextGaussian();
+    }
+    SimpleMatrix x = new SimpleMatrix(this.nDim, 1, true, xArray);
+    return this.covarianceChol.mult(x).plus(this.mean);
   }
 
 }
