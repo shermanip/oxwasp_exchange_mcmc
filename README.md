@@ -12,7 +12,7 @@ For dependencies, see the `pom.xml` file or:
 * `org.ejml` [Efficient Java Matrix Library](http://ejml.org/wiki/index.php?title=Main_Page)
 
 ## How to use (Linux recommended)
-Download from the `.jar` file from the release or compile it using instructions below. Call the `.jar` file using
+Download from the `.jar` file from the release or compile it using the instructions below. Call the `.jar` file using
 ```
 java -jar oxwasp_exchange_mcmc-1.0.0-jar-with-dependencies.jar -option
 ```
